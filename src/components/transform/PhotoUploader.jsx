@@ -1,29 +1,24 @@
 import React, { useRef } from 'react';
-import { Camera, X } from 'lucide-react';
+import { Camera, ImagePlus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) {
-  const inputRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       onPhotoSelect(file);
-      // Reset so the same file can be re-selected
       e.target.value = '';
     }
   };
 
   return (
-    <div className="relative flex justify-center">
-      {/* Always-present hidden file input */}
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileChange}
-        style={{ display: 'none' }}
-      />
+    <div className="relative flex flex-col items-center gap-4">
+      {/* Hidden inputs */}
+      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+      <input ref={cameraInputRef} type="file" accept="image/*" capture="user" onChange={handleFileChange} style={{ display: 'none' }} />
 
       <AnimatePresence mode="wait">
         {photoPreview ? (
@@ -34,11 +29,7 @@ export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) 
             exit={{ opacity: 0, scale: 0.9 }}
             className="relative rounded-2xl overflow-hidden aspect-square w-full max-w-[280px]"
           >
-            <img
-              src={photoPreview}
-              alt="Your photo"
-              className="w-full h-full object-cover"
-            />
+            <img src={photoPreview} alt="Your photo" className="w-full h-full object-cover" />
             <button
               onClick={onClear}
               className="absolute top-3 right-3 w-8 h-8 bg-black/60 backdrop-blur-sm rounded-full flex items-center justify-center"
@@ -52,21 +43,35 @@ export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => inputRef.current?.click()}
-            className="w-full max-w-[280px] aspect-square rounded-2xl border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-4 bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer select-none"
+            className="w-full max-w-[280px] aspect-square rounded-2xl border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-4 bg-muted/30"
           >
-            <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center pointer-events-none">
+            <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center">
               <Camera className="w-7 h-7 text-primary" />
             </div>
-            <div className="text-center pointer-events-none">
-              <p className="text-foreground font-medium text-sm">Upload a selfie</p>
-              <p className="text-muted-foreground text-xs mt-1">
-                Tap to take or choose a photo
-              </p>
-            </div>
+            <p className="text-foreground font-medium text-sm">Add a photo</p>
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Action buttons */}
+      {!photoPreview && (
+        <div className="flex gap-3 w-full max-w-[280px]">
+          <button
+            onClick={() => cameraInputRef.current?.click()}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors"
+          >
+            <Camera className="w-4 h-4" />
+            Take Photo
+          </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-secondary text-secondary-foreground font-medium text-sm hover:bg-secondary/80 transition-colors"
+          >
+            <ImagePlus className="w-4 h-4" />
+            Upload
+          </button>
+        </div>
+      )}
     </div>
   );
 }
