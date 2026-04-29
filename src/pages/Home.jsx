@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import PhotoUploader from '@/components/transform/PhotoUploader';
 import EraCard from '@/components/transform/EraCard';
+import CustomEraCard from '@/components/transform/CustomEraCard';
 import TransformingOverlay from '@/components/transform/TransformingOverlay';
 import { ERAS } from '@/lib/eras';
 
@@ -14,6 +15,7 @@ export default function Home() {
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [selectedEra, setSelectedEra] = useState(null);
+  const [customDescription, setCustomDescription] = useState('');
   const [isTransforming, setIsTransforming] = useState(false);
 
   const handlePhotoSelect = (file) => {
@@ -32,7 +34,10 @@ export default function Home() {
     if (!photo || !selectedEra) return;
 
     setIsTransforming(true);
-    const era = ERAS.find((e) => e.id === selectedEra);
+    const isCustom = selectedEra === 'custom';
+    const era = isCustom
+      ? { id: 'custom', label: 'Custom', prompt: `Transform this person: ${customDescription}. Photorealistic, cinematic lighting, high quality.` }
+      : ERAS.find((e) => e.id === selectedEra);
 
     // Upload the original photo
     const { file_url } = await base44.integrations.Core.UploadFile({ file: photo });
@@ -41,7 +46,7 @@ export default function Home() {
     const transformation = await base44.entities.Transformation.create({
       original_photo_url: file_url,
       era: era.id,
-      era_label: era.label,
+      era_label: isCustom ? customDescription.slice(0, 40) : era.label,
       status: 'processing',
     });
 
@@ -108,14 +113,35 @@ export default function Home() {
               onClick={() => setSelectedEra(era.id)}
             />
           ))}
+          <CustomEraCard
+            isSelected={selectedEra === 'custom'}
+            onClick={() => setSelectedEra('custom')}
+          />
         </div>
+
+        {/* Custom era description input */}
+        {selectedEra === 'custom' && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4"
+          >
+            <textarea
+              value={customDescription}
+              onChange={(e) => setCustomDescription(e.target.value)}
+              placeholder="Describe your vision... e.g. 'a samurai warrior in feudal Japan' or 'a futuristic superhero'"
+              className="w-full rounded-xl bg-secondary/60 border border-border text-foreground text-sm placeholder:text-muted-foreground px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-primary/50"
+              rows={3}
+            />
+          </motion.div>
+        )}
       </div>
 
       {/* Transform Button */}
       <div className="px-5 py-6">
         <Button
           onClick={handleTransform}
-          disabled={!photo || !selectedEra || isTransforming}
+          disabled={!photo || !selectedEra || isTransforming || (selectedEra === 'custom' && !customDescription.trim())}
           className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base gap-2 disabled:opacity-30"
         >
           <Sparkles className="w-5 h-5" />
