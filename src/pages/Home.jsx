@@ -1,174 +1,128 @@
-import React, { useState } from "react";
-import { base44 } from "@/api/base44Client";
-import { motion } from "framer-motion";
-import { Sparkles, Wand2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-
-import PhotoUploader from "@/components/PhotoUploader";
-import EraCard from "@/components/EraCard";
-import TransformationResult from "@/components/TransformationResult";
-import { ERAS } from "@/lib/eras";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Sparkles, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { base44 } from '@/api/base44Client';
+import PhotoUploader from '@/components/transform/PhotoUploader';
+import EraCard from '@/components/transform/EraCard';
+import TransformingOverlay from '@/components/transform/TransformingOverlay';
+import { ERAS } from '@/lib/eras';
 
 export default function Home() {
-  const [photoFile, setPhotoFile] = useState(null);
+  const navigate = useNavigate();
+  const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [selectedEra, setSelectedEra] = useState(null);
   const [isTransforming, setIsTransforming] = useState(false);
-  const [result, setResult] = useState(null);
 
   const handlePhotoSelect = (file) => {
-    setPhotoFile(file);
+    setPhoto(file);
     const reader = new FileReader();
     reader.onload = (e) => setPhotoPreview(e.target.result);
     reader.readAsDataURL(file);
   };
 
   const handleClearPhoto = () => {
-    setPhotoFile(null);
+    setPhoto(null);
     setPhotoPreview(null);
-    setSelectedEra(null);
   };
 
   const handleTransform = async () => {
-    if (!photoFile || !selectedEra) return;
+    if (!photo || !selectedEra) return;
 
     setIsTransforming(true);
-    setResult(null);
+    const era = ERAS.find((e) => e.id === selectedEra);
 
     // Upload the original photo
-    const { file_url } = await base44.integrations.Core.UploadFile({ file: photoFile });
+    const { file_url } = await base44.integrations.Core.UploadFile({ file: photo });
 
-    // Create a record in processing state
-    const record = await base44.entities.Transformation.create({
-      original_image_url: file_url,
-      era: selectedEra.name,
-      era_key: selectedEra.key,
-      status: "processing",
+    // Create transformation record
+    const transformation = await base44.entities.Transformation.create({
+      original_photo_url: file_url,
+      era: era.id,
+      era_label: era.label,
+      status: 'processing',
     });
 
     // Generate the transformed image
-    const { url: transformedUrl } = await base44.integrations.Core.GenerateImage({
-      prompt: selectedEra.prompt,
+    const result = await base44.integrations.Core.GenerateImage({
+      prompt: era.prompt,
       existing_image_urls: [file_url],
     });
 
-    // Update the record
-    await base44.entities.Transformation.update(record.id, {
-      transformed_image_url: transformedUrl,
-      status: "completed",
+    // Update the transformation with result
+    await base44.entities.Transformation.update(transformation.id, {
+      transformed_photo_url: result.url,
+      status: 'completed',
     });
 
-    setResult({
-      ...record,
-      transformed_image_url: transformedUrl,
-      status: "completed",
-    });
     setIsTransforming(false);
-    toast.success("Transformation complete!");
+    navigate(`/result/${transformation.id}`);
   };
 
-  const handleReset = () => {
-    setResult(null);
-    setPhotoFile(null);
-    setPhotoPreview(null);
-    setSelectedEra(null);
-  };
-
-  // Show result screen
-  if (isTransforming || result) {
-    return (
-      <TransformationResult
-        transformation={result}
-        era={selectedEra}
-        isLoading={isTransforming}
-        onBack={handleReset}
-      />
-    );
-  }
+  const era = ERAS.find((e) => e.id === selectedEra);
 
   return (
-    <div className="space-y-8">
-      {/* Hero */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-2"
-      >
-        <h1 className="font-heading font-bold text-2xl text-foreground">
-          Travel Through Time
-        </h1>
-        <p className="text-muted-foreground text-sm font-body max-w-xs mx-auto">
-          Upload your photo and AI will transform you into any era or scenario
-        </p>
-      </motion.div>
+    <div className="min-h-screen">
+      <AnimatePresence>
+        {isTransforming && <TransformingOverlay eraLabel={era?.label} />}
+      </AnimatePresence>
 
-      {/* Step 1: Upload Photo */}
-      <motion.section
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="space-y-3"
-      >
-        <div className="flex items-center gap-2">
-          <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center font-body">
-            1
-          </span>
-          <h2 className="font-heading font-semibold text-sm text-foreground">
-            Upload Your Photo
-          </h2>
-        </div>
+      {/* Header */}
+      <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-2"
+        >
+          <Sparkles className="w-5 h-5 text-primary" />
+          <h1 className="font-display text-xl font-bold text-foreground">TimeLens</h1>
+        </motion.div>
+        <p className="text-muted-foreground text-xs mt-1 ml-7">
+          Transform yourself across time
+        </p>
+      </div>
+
+      {/* Photo Upload Section */}
+      <div className="px-5 mb-6">
         <PhotoUploader
           photoPreview={photoPreview}
           onPhotoSelect={handlePhotoSelect}
           onClear={handleClearPhoto}
         />
-      </motion.section>
+      </div>
 
-      {/* Step 2: Choose Era */}
-      {photoPreview && (
-        <motion.section
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="space-y-3"
-        >
-          <div className="flex items-center gap-2">
-            <span className="w-6 h-6 rounded-full bg-primary/20 text-primary text-xs font-bold flex items-center justify-center font-body">
-              2
-            </span>
-            <h2 className="font-heading font-semibold text-sm text-foreground">
-              Choose Your Era
-            </h2>
-          </div>
-          <div className="grid grid-cols-3 gap-2.5">
-            {ERAS.map((era) => (
-              <EraCard
-                key={era.key}
-                era={era}
-                isSelected={selectedEra?.key === era.key}
-                onSelect={setSelectedEra}
-              />
-            ))}
-          </div>
-        </motion.section>
-      )}
+      {/* Era Selection */}
+      <div className="px-5">
+        <h2 className="font-display text-lg font-semibold text-foreground mb-3">
+          Choose Your Era
+        </h2>
+        <div className="grid grid-cols-3 gap-2.5">
+          {ERAS.map((era, index) => (
+            <EraCard
+              key={era.id}
+              era={era}
+              index={index}
+              isSelected={selectedEra === era.id}
+              onClick={() => setSelectedEra(era.id)}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Transform Button */}
-      {photoPreview && selectedEra && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="pb-4"
+      <div className="px-5 py-6">
+        <Button
+          onClick={handleTransform}
+          disabled={!photo || !selectedEra || isTransforming}
+          className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base gap-2 disabled:opacity-30"
         >
-          <Button
-            onClick={handleTransform}
-            className="w-full h-14 text-base font-heading font-bold bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity rounded-xl shadow-lg shadow-primary/25"
-          >
-            <Wand2 className="w-5 h-5 mr-2" />
-            Transform Me into {selectedEra.name}
-          </Button>
-        </motion.div>
-      )}
+          <Sparkles className="w-5 h-5" />
+          Transform Me
+          <ArrowRight className="w-4 h-4" />
+        </Button>
+      </div>
     </div>
   );
 }

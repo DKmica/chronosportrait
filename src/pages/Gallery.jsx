@@ -1,72 +1,71 @@
-import React from "react";
-import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { Images, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import GalleryCard from "@/components/GalleryCard";
+import React from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { Image, Sparkles } from 'lucide-react';
 
 export default function Gallery() {
   const { data: transformations = [], isLoading } = useQuery({
-    queryKey: ["transformations"],
-    queryFn: () => base44.entities.Transformation.list("-created_date", 50),
+    queryKey: ['transformations'],
+    queryFn: () => base44.entities.Transformation.list('-created_date', 50),
   });
 
-  const completed = transformations.filter((t) => t.status === "completed");
+  const completed = transformations.filter((t) => t.status === 'completed');
 
   return (
-    <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center space-y-2"
-      >
-        <h1 className="font-heading font-bold text-2xl text-foreground">
-          Your Gallery
-        </h1>
-        <p className="text-muted-foreground text-sm font-body">
-          All your time-warped portraits
+    <div className="min-h-screen">
+      {/* Header */}
+      <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4">
+        <div className="flex items-center gap-2">
+          <Image className="w-5 h-5 text-primary" />
+          <h1 className="font-display text-xl font-bold text-foreground">Gallery</h1>
+        </div>
+        <p className="text-muted-foreground text-xs mt-1 ml-7">
+          Your transformations
         </p>
-      </motion.div>
+      </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-2 gap-3">
-          {Array(4)
-            .fill(0)
-            .map((_, i) => (
-              <Skeleton key={i} className="aspect-square rounded-xl" />
-            ))}
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
         </div>
       ) : completed.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center justify-center py-16 gap-4"
-        >
-          <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center">
-            <Images className="w-8 h-8 text-muted-foreground" />
+        <div className="flex flex-col items-center justify-center py-20 px-5 text-center">
+          <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
+            <Sparkles className="w-8 h-8 text-muted-foreground" />
           </div>
-          <div className="text-center space-y-1">
-            <p className="font-heading font-semibold text-foreground">
-              No transformations yet
-            </p>
-            <p className="text-muted-foreground text-sm font-body">
-              Create your first one!
-            </p>
-          </div>
-          <Link to="/">
-            <Button className="bg-primary hover:bg-primary/90 font-body">
-              <Sparkles className="w-4 h-4 mr-2" />
-              Start Transforming
-            </Button>
-          </Link>
-        </motion.div>
+          <h3 className="font-display text-lg text-foreground mb-1">No transformations yet</h3>
+          <p className="text-muted-foreground text-sm">
+            Go to Transform to create your first one!
+          </p>
+        </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
-          {completed.map((t, i) => (
-            <GalleryCard key={t.id} transformation={t} index={i} />
+        <div className="px-5 grid grid-cols-2 gap-3">
+          {completed.map((item, index) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+            >
+              <Link
+                to={`/result/${item.id}`}
+                className="block relative rounded-xl overflow-hidden aspect-square group"
+              >
+                <img
+                  src={item.transformed_photo_url}
+                  alt={item.era_label}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <p className="text-white font-display text-sm font-semibold">
+                    {item.era_label}
+                  </p>
+                </div>
+              </Link>
+            </motion.div>
           ))}
         </div>
       )}

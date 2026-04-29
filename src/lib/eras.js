@@ -1,98 +1,86 @@
 export const ERAS = [
   {
-    key: "ancient_egypt",
-    name: "Ancient Egypt",
-    emoji: "🏛️",
-    description: "Pharaohs & pyramids",
-    prompt: "Transform this person into an ancient Egyptian pharaoh or queen, wearing traditional Egyptian headdress (nemes), golden jewelry, kohl eyeliner, standing in front of pyramids and the Nile river at sunset. Photorealistic, cinematic lighting.",
-    gradient: "from-amber-600/30 to-yellow-900/30"
+    id: 'ancient_egypt',
+    label: 'Ancient Egypt',
+    period: '3000 BC',
+    image: 'https://images.unsplash.com/photo-1539650116574-8efeb43e2750?w=400&q=80',
+    prompt: 'Transform this person into an ancient Egyptian pharaoh or queen, wearing golden headdress, kohl eyeliner, ornate collar necklace, standing in front of pyramids and desert landscape, cinematic lighting, photorealistic'
   },
   {
-    key: "medieval_knight",
-    name: "Medieval Knight",
-    emoji: "⚔️",
-    description: "Castles & armor",
-    prompt: "Transform this person into a medieval knight wearing shining plate armor, holding a sword, with a castle and dramatic cloudy sky in the background. Photorealistic, epic fantasy lighting, detailed armor engravings.",
-    gradient: "from-slate-500/30 to-zinc-800/30"
+    id: 'roman_empire',
+    label: 'Roman Empire',
+    period: '27 BC – 476 AD',
+    image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=400&q=80',
+    prompt: 'Transform this person into a Roman senator or empress, wearing a white toga with purple trim, laurel wreath crown, marble columns and Roman forum in background, dramatic lighting, photorealistic'
   },
   {
-    key: "renaissance",
-    name: "Renaissance",
-    emoji: "🎨",
-    description: "Art & elegance",
-    prompt: "Transform this person into a Renaissance-era noble, painted in the style of a classic oil painting. Wearing elaborate period clothing with ruffled collars, velvet, and brocade. Warm golden lighting, museum-quality portrait.",
-    gradient: "from-rose-700/30 to-amber-800/30"
+    id: 'medieval',
+    label: 'Medieval Knight',
+    period: '500 – 1500 AD',
+    image: 'https://images.unsplash.com/photo-1590845947670-c009801ffa74?w=400&q=80',
+    prompt: 'Transform this person into a medieval knight or noble, wearing ornate plate armor or royal gown, in a grand castle hall with stained glass windows, candlelight, photorealistic'
   },
   {
-    key: "viking",
-    name: "Viking Warrior",
-    emoji: "🪓",
-    description: "Norse legends",
-    prompt: "Transform this person into a fierce Viking warrior with braided hair, fur cloak, leather armor, and war paint. Standing on a longship with dramatic northern sea and stormy skies. Photorealistic, cinematic.",
-    gradient: "from-cyan-800/30 to-slate-700/30"
+    id: 'renaissance',
+    label: 'Renaissance',
+    period: '1400 – 1600',
+    image: 'https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=400&q=80',
+    prompt: 'Transform this person into a Renaissance era portrait painting style, wearing elaborate period clothing with ruffled collar, oil painting aesthetic like Leonardo da Vinci or Raphael, rich warm tones'
   },
   {
-    key: "jazz_1920s",
-    name: "1920s Jazz Era",
-    emoji: "🎷",
-    description: "Roaring twenties",
-    prompt: "Transform this person into a glamorous 1920s Jazz Age figure, wearing an Art Deco outfit with feathers, sequins, and pearls. Inside a speakeasy with dim golden lighting, jazz band in background. Photorealistic, vintage aesthetic.",
-    gradient: "from-yellow-600/30 to-orange-900/30"
+    id: 'pirate',
+    label: 'Golden Age Pirate',
+    period: '1650 – 1730',
+    image: 'https://images.unsplash.com/photo-1500346934132-87bdf2e1aaef?w=400&q=80',
+    prompt: 'Transform this person into a swashbuckling pirate captain, wearing tricorn hat, leather coat, standing on a ship deck with ocean and sunset behind, cinematic adventure movie style, photorealistic'
   },
   {
-    key: "samurai",
-    name: "Samurai",
-    emoji: "🗡️",
-    description: "Feudal Japan",
-    prompt: "Transform this person into a noble samurai warrior in feudal Japan, wearing traditional samurai armor (yoroi) with a katana. Cherry blossoms falling, temple in background. Photorealistic, dramatic lighting.",
-    gradient: "from-red-700/30 to-pink-900/30"
+    id: 'victorian',
+    label: 'Victorian Era',
+    period: '1837 – 1901',
+    image: 'https://images.unsplash.com/photo-1577083288073-40892c0860a4?w=400&q=80',
+    prompt: 'Transform this person into a Victorian era gentleman or lady, wearing top hat or corseted gown with bustle, monocle or parasol, in a grand Victorian parlor, sepia tones, photorealistic'
   },
   {
-    key: "cyberpunk",
-    name: "Cyberpunk 2077",
-    emoji: "🤖",
-    description: "Neon future",
-    prompt: "Transform this person into a cyberpunk character in a futuristic neon-lit city. Wearing high-tech cybernetic implants, LED-lit jacket, holographic visor. Neon signs, rain-slicked streets. Photorealistic, Blade Runner aesthetic.",
-    gradient: "from-purple-600/30 to-blue-900/30"
+    id: 'roaring_20s',
+    label: 'Roaring 20s',
+    period: '1920s',
+    image: 'https://images.unsplash.com/photo-1504196606672-aef5c9cefc92?w=400&q=80',
+    prompt: 'Transform this person into a 1920s jazz age character, wearing art deco flapper dress or pinstripe suit with fedora, in a glamorous speakeasy with golden lights, vintage photography style'
   },
   {
-    key: "space_explorer",
-    name: "Space Explorer",
-    emoji: "🚀",
-    description: "Among the stars",
-    prompt: "Transform this person into a futuristic space explorer in a sleek spacesuit, standing on an alien planet with multiple moons in the sky, nebulas visible. Photorealistic, sci-fi cinematic lighting, NASA-inspired.",
-    gradient: "from-indigo-600/30 to-violet-900/30"
+    id: 'cyberpunk',
+    label: 'Cyberpunk Future',
+    period: '2077',
+    image: 'https://images.unsplash.com/photo-1558618666-fcd25c85f82e?w=400&q=80',
+    prompt: 'Transform this person into a cyberpunk character, with neon face paint, futuristic tech implants, holographic clothing, in a neon-lit dystopian city at night, blade runner aesthetic, photorealistic'
   },
   {
-    key: "pirate",
-    name: "Pirate Captain",
-    emoji: "🏴‍☠️",
-    description: "High seas adventure",
-    prompt: "Transform this person into a legendary pirate captain, wearing a tricorn hat, long coat, and holding a compass. Standing on a ship deck with tropical island and sunset. Photorealistic, adventure movie style.",
-    gradient: "from-teal-600/30 to-emerald-900/30"
+    id: 'space',
+    label: 'Space Explorer',
+    period: '2150',
+    image: 'https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?w=400&q=80',
+    prompt: 'Transform this person into a space explorer astronaut, wearing a sleek futuristic spacesuit with helmet visor reflecting stars, floating near a space station with Earth visible below, cinematic sci-fi, photorealistic'
   },
   {
-    key: "disco_70s",
-    name: "70s Disco",
-    emoji: "🪩",
-    description: "Boogie nights",
-    prompt: "Transform this person into a 1970s disco star, wearing a flashy sequined outfit with wide collars and bell bottoms. On a light-up disco dance floor with disco ball overhead. Photorealistic, vibrant colors, retro aesthetic.",
-    gradient: "from-fuchsia-600/30 to-pink-800/30"
+    id: 'anime',
+    label: 'Anime Hero',
+    period: 'Fantasy',
+    image: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&q=80',
+    prompt: 'Transform this person into an anime character, in dramatic Japanese anime art style, dynamic pose with flowing hair, vibrant colors, cherry blossoms or energy effects around them, studio quality anime illustration'
   },
   {
-    key: "western",
-    name: "Wild West",
-    emoji: "🤠",
-    description: "Frontier life",
-    prompt: "Transform this person into a Wild West cowboy/cowgirl, wearing a cowboy hat, leather vest, bandana, and boots. Standing in a dusty frontier town at golden hour. Photorealistic, western movie cinematic style.",
-    gradient: "from-orange-600/30 to-amber-900/30"
+    id: 'greek_myth',
+    label: 'Greek Mythology',
+    period: 'Timeless',
+    image: 'https://images.unsplash.com/photo-1608730558838-b95bb17184c1?w=400&q=80',
+    prompt: 'Transform this person into a Greek god or goddess on Mount Olympus, wearing flowing white robes with golden accessories, dramatic sky with lightning, marble temple in background, epic and majestic, photorealistic'
   },
   {
-    key: "superhero",
-    name: "Superhero",
-    emoji: "🦸",
-    description: "Save the world",
-    prompt: "Transform this person into an original superhero with a unique costume, cape flowing in the wind, standing on a skyscraper rooftop overlooking a futuristic city at night. Photorealistic, comic book inspired, dramatic lighting.",
-    gradient: "from-blue-600/30 to-red-800/30"
-  }
+    id: 'wild_west',
+    label: 'Wild West',
+    period: '1850 – 1900',
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',
+    prompt: 'Transform this person into a Wild West cowboy or cowgirl, wearing a wide-brimmed hat, leather duster coat, bandana, standing in a dusty western town with saloon doors, golden hour sunset, cinematic western movie style'
+  },
 ];

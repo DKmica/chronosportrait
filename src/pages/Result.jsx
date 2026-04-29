@@ -1,0 +1,127 @@
+import React from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { base44 } from '@/api/base44Client';
+import { motion } from 'framer-motion';
+import { ArrowLeft, Download, Share2, Sparkles, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+export default function Result() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
+  const { data: transformation, isLoading } = useQuery({
+    queryKey: ['transformation', id],
+    queryFn: () => base44.entities.Transformation.filter({ id }),
+    select: (data) => data[0],
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!transformation) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-5">
+        <p className="text-muted-foreground">Transformation not found</p>
+        <Button variant="outline" onClick={() => navigate('/')}>
+          Go Back
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen">
+      {/* Header */}
+      <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4 flex items-center justify-between">
+        <button onClick={() => navigate('/')} className="p-2 -ml-2">
+          <ArrowLeft className="w-5 h-5 text-foreground" />
+        </button>
+        <h1 className="font-display text-lg font-semibold">{transformation.era_label}</h1>
+        <div className="w-9" />
+      </div>
+
+      {/* Result Image */}
+      <div className="px-5">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="relative rounded-2xl overflow-hidden aspect-square bg-muted"
+        >
+          {transformation.status === 'completed' && transformation.transformed_photo_url ? (
+            <img
+              src={transformation.transformed_photo_url}
+              alt={`Transformed to ${transformation.era_label}`}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="flex items-center justify-center h-full">
+              <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
+            </div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Before / After Comparison */}
+      <div className="px-5 mt-4">
+        <p className="text-muted-foreground text-xs mb-2 font-medium uppercase tracking-wider">
+          Original
+        </p>
+        <div className="w-20 h-20 rounded-xl overflow-hidden border-2 border-border">
+          <img
+            src={transformation.original_photo_url}
+            alt="Original"
+            className="w-full h-full object-cover"
+          />
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="px-5 mt-6 space-y-3">
+        <div className="flex gap-3">
+          <Button
+            variant="outline"
+            className="flex-1 h-12 rounded-xl gap-2 border-border"
+            onClick={() => {
+              if (transformation.transformed_photo_url) {
+                window.open(transformation.transformed_photo_url, '_blank');
+              }
+            }}
+          >
+            <Download className="w-4 h-4" />
+            Save
+          </Button>
+          <Button
+            variant="outline"
+            className="flex-1 h-12 rounded-xl gap-2 border-border"
+            onClick={() => {
+              if (navigator.share && transformation.transformed_photo_url) {
+                navigator.share({
+                  title: `My ${transformation.era_label} transformation`,
+                  url: transformation.transformed_photo_url,
+                });
+              }
+            }}
+          >
+            <Share2 className="w-4 h-4" />
+            Share
+          </Button>
+        </div>
+
+        <Button
+          onClick={() => navigate('/')}
+          className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+        >
+          <RotateCcw className="w-4 h-4" />
+          New Transformation
+        </Button>
+      </div>
+    </div>
+  );
+}
