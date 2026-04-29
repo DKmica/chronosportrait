@@ -1,11 +1,8 @@
-import React, { useRef } from 'react';
-import { Camera, Upload, X } from 'lucide-react';
+import React from 'react';
+import { Camera, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Button } from '@/components/ui/button';
 
 export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) {
-  const fileInputRef = useRef(null);
-
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -15,15 +12,6 @@ export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) 
 
   return (
     <div className="relative">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        capture="user"
-        onChange={handleFileChange}
-        className="hidden"
-      />
-
       <AnimatePresence mode="wait">
         {photoPreview ? (
           <motion.div
@@ -46,14 +34,19 @@ export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) 
             </button>
           </motion.div>
         ) : (
-          <motion.button
+          <motion.label
             key="upload"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full max-w-[280px] mx-auto aspect-square rounded-2xl border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-4 bg-muted/30 hover:bg-muted/50 transition-colors"
+            className="w-full max-w-[280px] mx-auto aspect-square rounded-2xl border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-4 bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
           >
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileChange}
+              className="hidden"
+            />
             <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center">
               <Camera className="w-7 h-7 text-primary" />
             </div>
@@ -63,7 +56,7 @@ export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) 
                 Tap to take or choose a photo
               </p>
             </div>
-          </motion.button>
+          </motion.label>
         )}
       </AnimatePresence>
     </div>
