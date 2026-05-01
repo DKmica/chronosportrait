@@ -22,7 +22,7 @@ export default function Gallery() {
           <h1 className="font-display text-xl font-bold text-foreground">Gallery</h1>
         </div>
         <p className="text-muted-foreground text-xs mt-1 ml-7">
-          Your transformations
+          Your time travels
         </p>
       </div>
 
