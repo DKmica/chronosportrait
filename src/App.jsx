@@ -10,6 +10,7 @@ import Home from '@/pages/Home';
 import Result from '@/pages/Result';
 import Gallery from '@/pages/Gallery';
 import Community from '@/pages/Community';
+import Settings from '@/pages/Settings';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -42,6 +43,7 @@ const AuthenticatedApp = () => {
         <Route path="/gallery" element={<Gallery />} />
         <Route path="/community" element={<Community />} />
         <Route path="/result/:id" element={<Result />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>

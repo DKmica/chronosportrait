@@ -1,0 +1,247 @@
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { User, Crown, LogOut, Bell, Trash2, ChevronRight, Sparkles, Shield, Star } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
+import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
+
+const PLAN_LABELS = {
+  free: { label: 'Free', color: 'text-muted-foreground', bg: 'bg-muted/50' },
+  pro_monthly: { label: 'Pro Monthly', color: 'text-primary', bg: 'bg-primary/15' },
+  pro_yearly: { label: 'Pro Yearly', color: 'text-primary', bg: 'bg-primary/15' },
+};
+
+export default function Settings() {
+  const [isAuthenticated, setIsAuthenticated] = useState(null);
+
+  const { data: user } = useQuery({
+    queryKey: ['me'],
+    queryFn: () => base44.auth.me(),
+  });
+
+  const { data: profiles = [] } = useQuery({
+    queryKey: ['userProfile', user?.email],
+    queryFn: () => base44.entities.UserProfile.filter({ user_email: user.email }),
+    enabled: !!user?.email,
+  });
+
+  useEffect(() => {
+    base44.auth.isAuthenticated().then(setIsAuthenticated);
+  }, []);
+
+  const profile = profiles[0];
+  const plan = profile?.plan || 'free';
+  const planInfo = PLAN_LABELS[plan];
+
+  const handleLogin = () => base44.auth.redirectToLogin();
+  const handleLogout = () => base44.auth.logout();
+
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen">
+      {/* Header */}
+      <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4">
+        <h1 className="font-display text-2xl font-bold text-foreground">Settings</h1>
+      </div>
+
+      {/* Not signed in */}
+      {!isAuthenticated ? (
+        <div className="px-5 mt-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border border-border bg-card p-8 flex flex-col items-center text-center gap-4"
+          >
+            <div className="w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center">
+              <User className="w-8 h-8 text-primary" />
+            </div>
+            <div>
+              <h2 className="font-display text-xl font-semibold text-foreground">Sign in to Chronos Booth</h2>
+              <p className="text-muted-foreground text-sm mt-1">Save your transformations, track your history, and unlock Pro features.</p>
+            </div>
+            <Button
+              onClick={handleLogin}
+              className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2 font-semibold"
+            >
+              <Sparkles className="w-4 h-4" />
+              Sign In
+            </Button>
+          </motion.div>
+        </div>
+      ) : (
+        <div className="px-5 space-y-5 pb-8">
+
+          {/* Profile Card */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="rounded-2xl border border-border bg-card p-5 flex items-center gap-4"
+          >
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center flex-shrink-0">
+              <span className="text-primary-foreground font-display text-xl font-bold">
+                {user?.full_name?.charAt(0)?.toUpperCase() || '?'}
+              </span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-foreground truncate">{user?.full_name || 'Anonymous'}</p>
+              <p className="text-muted-foreground text-sm truncate">{user?.email}</p>
+              <span className={`inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${planInfo.bg} ${planInfo.color}`}>
+                {planInfo.label}
+              </span>
+            </div>
+          </motion.div>
+
+          {/* Usage Stats */}
+          {profile && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              className="rounded-2xl border border-border bg-card p-5"
+            >
+              <h3 className="font-display text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-4">Usage</h3>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-foreground font-display">{profile.total_transformations || 0}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Total</p>
+                </div>
+                <div className="text-center border-x border-border">
+                  <p className="text-2xl font-bold text-foreground font-display">{profile.transformations_today || 0}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Today</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-primary font-display">🔥 {profile.streak_days || 0}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Day Streak</p>
+                </div>
+              </div>
+              {profile.bonus_transformations > 0 && (
+                <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-primary/10 text-primary text-sm">
+                  <Star className="w-4 h-4 flex-shrink-0" />
+                  <span>{profile.bonus_transformations} bonus transformation{profile.bonus_transformations !== 1 ? 's' : ''} from referrals</span>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Subscription */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="rounded-2xl border border-border bg-card overflow-hidden"
+          >
+            <div className="p-5 border-b border-border">
+              <h3 className="font-display text-sm font-semibold text-muted-foreground uppercase tracking-wider">Subscription</h3>
+            </div>
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center">
+                    <Crown className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-foreground">{planInfo.label} Plan</p>
+                    <p className="text-xs text-muted-foreground">
+                      {plan === 'free' ? '3 transformations/day' : 'Unlimited transformations'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {plan === 'free' && (
+                <div className="rounded-xl bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 p-4">
+                  <p className="font-semibold text-foreground text-sm mb-1">Upgrade to Pro</p>
+                  <ul className="space-y-1 mb-3">
+                    {['Unlimited transformations', 'Priority AI processing', 'HD cinematic videos', 'Exclusive eras'].map(f => (
+                      <li key={f} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                        <span className="text-primary">✓</span> {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Button className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2 text-sm font-semibold">
+                    <Crown className="w-4 h-4" />
+                    Upgrade to Pro
+                  </Button>
+                </div>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Referral */}
+          {profile?.referral_code && (
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="rounded-2xl border border-border bg-card p-5"
+            >
+              <h3 className="font-display text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Refer a Friend</h3>
+              <p className="text-sm text-muted-foreground mb-3">Share your code and earn bonus transformations for each friend who signs up.</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 rounded-xl bg-secondary/60 border border-border px-4 py-2.5 font-mono text-sm text-foreground tracking-widest">
+                  {profile.referral_code}
+                </div>
+                <Button
+                  variant="outline"
+                  className="rounded-xl border-border h-10"
+                  onClick={() => navigator.clipboard.writeText(profile.referral_code)}
+                >
+                  Copy
+                </Button>
+              </div>
+            </motion.div>
+          )}
+
+          {/* App Info */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="rounded-2xl border border-border bg-card overflow-hidden"
+          >
+            <div className="p-5 border-b border-border">
+              <h3 className="font-display text-sm font-semibold text-muted-foreground uppercase tracking-wider">About</h3>
+            </div>
+            {[
+              { icon: Shield, label: 'Privacy Policy' },
+              { icon: Star, label: 'Rate the App' },
+            ].map(({ icon: Icon, label }) => (
+              <button
+                key={label}
+                className="w-full flex items-center gap-3 px-5 py-4 border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
+              >
+                <Icon className="w-4 h-4 text-muted-foreground" />
+                <span className="flex-1 text-sm text-foreground text-left">{label}</span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </button>
+            ))}
+          </motion.div>
+
+          {/* Sign Out */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.25 }}
+          >
+            <Button
+              variant="outline"
+              onClick={handleLogout}
+              className="w-full h-12 rounded-xl border-destructive/40 text-destructive hover:bg-destructive/10 gap-2"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign Out
+            </Button>
+          </motion.div>
+
+          <p className="text-center text-xs text-muted-foreground">Chronos Booth v1.0</p>
+        </div>
+      )}
+    </div>
+  );
+}
