@@ -3,42 +3,42 @@ export const ERAS = [
     id: 'ancient_egypt',
     label: 'Ancient Egypt',
     period: '3000 BC',
-    image: 'https://images.unsplash.com/photo-1608848461950-0fe51dfc41cb?w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?w=400&q=80',
     prompt: 'Transform this person into an ancient Egyptian pharaoh or queen, wearing golden headdress, kohl eyeliner, ornate collar necklace, standing in front of pyramids and desert landscape, cinematic lighting, photorealistic'
   },
   {
     id: 'roman_empire',
     label: 'Roman Empire',
     period: '27 BC – 476 AD',
-    image: 'https://images.unsplash.com/photo-1555992336-03a23c7b20ee?w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?w=400&q=80',
     prompt: 'Transform this person into a Roman senator or empress, wearing a white toga with purple trim, laurel wreath crown, marble columns and Roman forum in background, dramatic lighting, photorealistic'
   },
   {
     id: 'medieval',
     label: 'Medieval Knight',
     period: '500 – 1500 AD',
-    image: 'https://images.unsplash.com/photo-1509460913899-515f1df34fea?w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=400&q=80',
     prompt: 'Transform this person into a medieval knight or noble, wearing ornate plate armor or royal gown, in a grand castle hall with stained glass windows, candlelight, photorealistic'
   },
   {
     id: 'renaissance',
     label: 'Renaissance',
     period: '1400 – 1600',
-    image: 'https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=400&q=80',
     prompt: 'Transform this person into a Renaissance era portrait painting style, wearing elaborate period clothing with ruffled collar, oil painting aesthetic like Leonardo da Vinci or Raphael, rich warm tones'
   },
   {
     id: 'pirate',
     label: 'Golden Age Pirate',
     period: '1650 – 1730',
-    image: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1568430462989-44163eb1752f?w=400&q=80',
     prompt: 'Transform this person into a swashbuckling pirate captain, wearing tricorn hat, leather coat, standing on a ship deck with ocean and sunset behind, cinematic adventure movie style, photorealistic'
   },
   {
     id: 'victorian',
     label: 'Victorian Era',
     period: '1837 – 1901',
-    image: 'https://images.unsplash.com/photo-1533163879546-71a5e1e02f91?w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=400&q=80',
     prompt: 'Transform this person into a Victorian era gentleman or lady, wearing top hat or corseted gown with bustle, monocle or parasol, in a grand Victorian parlor, sepia tones, photorealistic'
   },
   {
@@ -52,7 +52,7 @@ export const ERAS = [
     id: 'cyberpunk',
     label: 'Cyberpunk Future',
     period: '2077',
-    image: 'https://images.unsplash.com/photo-1563089145-599997674d42?w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1514543250502-95b20c7b9f15?w=400&q=80',
     prompt: 'Transform this person into a cyberpunk character, with neon face paint, futuristic tech implants, holographic clothing, in a neon-lit dystopian city at night, blade runner aesthetic, photorealistic'
   },
   {
@@ -66,35 +66,35 @@ export const ERAS = [
     id: 'anime',
     label: 'Anime Hero',
     period: 'Fantasy',
-    image: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&q=80',
     prompt: 'Transform this person into an anime character, in dramatic Japanese anime art style, dynamic pose with flowing hair, vibrant colors, cherry blossoms or energy effects around them, studio quality anime illustration'
   },
   {
     id: 'greek_myth',
     label: 'Greek Mythology',
     period: 'Timeless',
-    image: 'https://images.unsplash.com/photo-1570913149827-d2ac84ab3f9a?w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1555993539-1732b0258235?w=400&q=80',
     prompt: 'Transform this person into a Greek god or goddess on Mount Olympus, wearing flowing white robes with golden accessories, dramatic sky with lightning, marble temple in background, epic and majestic, photorealistic'
   },
   {
     id: 'wild_west',
     label: 'Wild West',
     period: '1850 – 1900',
-    image: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1508193638397-1c4234db14d8?w=400&q=80',
     prompt: 'Transform this person into a Wild West cowboy or cowgirl, wearing a wide-brimmed hat, leather duster coat, bandana, standing in a dusty western town with saloon doors, golden hour sunset, cinematic western movie style'
   },
   {
     id: 'viking',
     label: 'Viking Warrior',
     period: '793 – 1066 AD',
-    image: 'https://images.unsplash.com/photo-1563387852576-964bc31b73af?w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1531722569936-825d4eaf5a47?w=400&q=80',
     prompt: 'Transform this person into a fierce Norse Viking warrior, wearing a horned helmet, fur-lined armor, braided hair and beard, holding an axe, standing on a longship with stormy fjords in the background, cinematic epic lighting, photorealistic'
   },
   {
     id: 'feudal_japan',
     label: 'Feudal Japan',
     period: '1185 – 1868',
-    image: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1490761668535-35497054764e?w=400&q=80',
     prompt: 'Transform this person into a noble samurai or geisha in feudal Japan, wearing ornate silk kimono or full samurai armor with kabuto helmet, cherry blossom trees and a traditional pagoda in the background, painterly cinematic style, photorealistic'
   },
   {
@@ -108,7 +108,7 @@ export const ERAS = [
     id: 'prohibition',
     label: 'Prohibition Era',
     period: '1920s Gangster',
-    image: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1504196606672-aef5c9cefc92?w=400&q=80',
     prompt: 'Transform this person into a 1920s prohibition-era gangster or mob boss, wearing a sharp pinstripe double-breasted suit, fedora hat, pocket square, standing in a dimly lit speakeasy with smoky atmosphere and jazz musicians in the background, noir cinematic style'
   },
   {
@@ -129,7 +129,7 @@ export const ERAS = [
     id: 'post_apocalyptic',
     label: 'Post-Apocalyptic',
     period: '2150',
-    image: 'https://images.unsplash.com/photo-1513581166391-887a96ddeafd?w=400&q=80',
+    image: 'https://images.unsplash.com/photo-1500916434205-0c77489c6cf7?w=400&q=80',
     prompt: 'Transform this person into a post-apocalyptic survivor, wearing scavenged armor made from car parts and leather straps, face paint and battle scars, standing in a wasteland with ruined skyscrapers and a red stormy sky, Mad Max style cinematic, photorealistic'
   },
   {
