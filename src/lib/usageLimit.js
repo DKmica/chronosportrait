@@ -7,6 +7,12 @@ export async function getUserProfile(userEmail) {
   return profiles[0] || null;
 }
 
+function generateReferralCode(email) {
+  const prefix = email.split('@')[0].replace(/[^a-z0-9]/gi, '').toUpperCase().slice(0, 5);
+  const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+  return `${prefix}${suffix}`;
+}
+
 export async function getOrCreateProfile(userEmail) {
   let profile = await getUserProfile(userEmail);
   if (!profile) {
@@ -17,7 +23,14 @@ export async function getOrCreateProfile(userEmail) {
       bonus_transformations: 0,
       total_transformations: 0,
       streak_days: 0,
+      referral_code: generateReferralCode(userEmail),
     });
+  } else if (!profile.referral_code) {
+    // Backfill for existing profiles without a code
+    await base44.entities.UserProfile.update(profile.id, {
+      referral_code: generateReferralCode(userEmail),
+    });
+    profile = await getUserProfile(userEmail);
   }
   return profile;
 }

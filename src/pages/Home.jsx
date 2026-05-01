@@ -18,6 +18,7 @@ import { SPECIAL_MODES, AD_GATED_MODES } from '@/lib/specialModes';
 import StyleSelector, { STYLE_PROMPTS } from '@/components/transform/StyleSelector';
 import { getOrCreateProfile, getRemainingToday, consumeTransformation, FREE_DAILY_LIMIT } from '@/lib/usageLimit';
 import { buildFaceSwapPrompt, buildGroupFaceSwapPrompt } from '@/lib/faceSwapPrompt';
+import PostGenerationModal from '@/components/referral/PostGenerationModal';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -48,6 +49,7 @@ export default function Home() {
   // Share for bonus
   const [shareForBonus, setShareForBonus] = useState(false);
   const [lastTransformation, setLastTransformation] = useState(null);
+  const [postGenModalOpen, setPostGenModalOpen] = useState(false);
 
   useEffect(() => {
     base44.auth.isAuthenticated().then(async (authed) => {
@@ -57,6 +59,20 @@ export default function Home() {
         const profile = await getOrCreateProfile(me.email);
         setUserProfile(profile);
         setRemaining(getRemainingToday(profile));
+
+        // Auto-redeem referral code from URL if not already used
+        const urlParams = new URLSearchParams(window.location.search);
+        const refCode = urlParams.get('ref');
+        if (refCode && !profile.referred_by) {
+          try {
+            await base44.functions.invoke('redeemReferral', { referral_code: refCode.toUpperCase() });
+            const updated = await getOrCreateProfile(me.email);
+            setUserProfile(updated);
+            setRemaining(getRemainingToday(updated));
+          } catch (_) {
+            // Silently ignore invalid / already-used codes
+          }
+        }
       }
     });
   }, []);
@@ -182,9 +198,11 @@ export default function Home() {
       setRemaining(getRemainingToday(updated));
     }
 
-    setLastTransformation({ ...transformation, transformed_photo_url: result.url, era_label: isCustom ? customDescription.slice(0, 40) : baseEra.label });
+    const completedTransformation = { ...transformation, transformed_photo_url: result.url, era_label: isCustom ? customDescription.slice(0, 40) : baseEra.label };
+    setLastTransformation(completedTransformation);
     setIsTransforming(false);
-    navigate(`/result/${transformation.id}`);
+    setPostGenModalOpen(true);
+    setTimeout(() => navigate(`/result/${transformation.id}`), 100);
   };
 
   const activeEra = ERAS.find((e) => e.id === selectedEra);
@@ -214,6 +232,14 @@ export default function Home() {
         onOpenChange={setAdGateOpen}
         modeName={SPECIAL_MODES.find(m => m.id === pendingMode)?.label || ''}
         onUnlocked={handleAdUnlocked}
+      />
+
+      <PostGenerationModal
+        open={postGenModalOpen}
+        onClose={() => setPostGenModalOpen(false)}
+        transformation={lastTransformation}
+        referralCode={userProfile?.referral_code}
+        remaining={remaining}
       />
 
       {/* Header */}

@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import ReferAndEarn from '@/components/referral/ReferAndEarn';
 
 const PLAN_LABELS = {
   free: { label: 'Free', color: 'text-muted-foreground', bg: 'bg-muted/50' },
@@ -190,28 +191,10 @@ export default function Settings() {
             </div>
           </motion.div>
 
-          {/* Referral */}
-          {profile?.referral_code && (
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="rounded-2xl border border-border bg-card p-5"
-            >
-              <h3 className="font-display text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Refer a Friend</h3>
-              <p className="text-sm text-muted-foreground mb-3">Share your code and earn bonus transformations for each friend who signs up.</p>
-              <div className="flex items-center gap-2">
-                <div className="flex-1 rounded-xl bg-secondary/60 border border-border px-4 py-2.5 font-mono text-sm text-foreground tracking-widest">
-                  {profile.referral_code}
-                </div>
-                <Button
-                  variant="outline"
-                  className="rounded-xl border-border h-10"
-                  onClick={() => navigator.clipboard.writeText(profile.referral_code)}
-                >
-                  Copy
-                </Button>
-              </div>
+          {/* Refer & Earn */}
+          {profile && (
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+              <ReferAndEarn profile={profile} />
             </motion.div>
           )}
 
