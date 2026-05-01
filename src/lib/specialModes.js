@@ -1,4 +1,17 @@
+// Modes that require watching an ad (free tier) or pro plan
+export const AD_GATED_MODES = ['couples', 'group'];
+
 export const SPECIAL_MODES = [
+  {
+    id: 'group',
+    label: 'Group',
+    emoji: '👥',
+    description: 'Up to unlimited people in one scene',
+    promptPrefix: 'This is a group of multiple people. Transform ALL of them together in one cohesive, cinematic scene, each person clearly visible and era-appropriate. ',
+    eraIds: null,
+    isPro: false, // unlockable via ad watch
+    isGroup: true,
+  },
   {
     id: 'couples',
     label: 'Couples',

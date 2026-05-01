@@ -1,11 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Play } from 'lucide-react';
 
-export default function SpecialModeBar({ modes, selectedMode, onSelect }) {
+export default function SpecialModeBar({ modes, selectedMode, onSelect, adGatedModes = [], userPlan = 'free' }) {
   return (
     <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-hide">
       {modes.map((mode, index) => {
         const isSelected = selectedMode === mode.id;
+        const isGated = adGatedModes.includes(mode.id) && userPlan === 'free';
         return (
           <motion.button
             key={mode.id}
@@ -13,7 +15,7 @@ export default function SpecialModeBar({ modes, selectedMode, onSelect }) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.06 }}
             onClick={() => onSelect(mode.id)}
-            className={`flex-shrink-0 flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl border transition-all duration-200 ${
+            className={`relative flex-shrink-0 flex flex-col items-center gap-1.5 px-4 py-3 rounded-2xl border transition-all duration-200 ${
               isSelected
                 ? 'bg-primary/15 border-primary text-primary'
                 : 'bg-muted/40 border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
@@ -21,6 +23,11 @@ export default function SpecialModeBar({ modes, selectedMode, onSelect }) {
           >
             <span className="text-xl leading-none">{mode.emoji}</span>
             <span className="text-xs font-semibold whitespace-nowrap">{mode.label}</span>
+            {isGated && !isSelected && (
+              <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-accent flex items-center justify-center">
+                <Play className="w-2.5 h-2.5 text-white fill-white" />
+              </div>
+            )}
           </motion.button>
         );
       })}

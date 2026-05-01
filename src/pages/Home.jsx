@@ -1,29 +1,64 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, ArrowRight, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import PhotoUploader from '@/components/transform/PhotoUploader';
+import GroupPhotoUploader from '@/components/transform/GroupPhotoUploader';
 import EraCard from '@/components/transform/EraCard';
 import CustomEraCard from '@/components/transform/CustomEraCard';
 import SpecialModeBar from '@/components/transform/SpecialModeBar';
 import TransformingOverlay from '@/components/transform/TransformingOverlay';
+import AdGateModal from '@/components/transform/AdGateModal';
+import LimitBanner from '@/components/transform/LimitBanner';
+import ShareSheet from '@/components/share/ShareSheet';
 import { ERAS } from '@/lib/eras';
-import { SPECIAL_MODES } from '@/lib/specialModes';
+import { SPECIAL_MODES, AD_GATED_MODES } from '@/lib/specialModes';
 import StyleSelector, { STYLE_PROMPTS } from '@/components/transform/StyleSelector';
+import { getOrCreateProfile, getRemainingToday, consumeTransformation, FREE_DAILY_LIMIT } from '@/lib/usageLimit';
 
 export default function Home() {
   const navigate = useNavigate();
+
+  // Photos
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photo2, setPhoto2] = useState(null);
   const [photoPreview2, setPhotoPreview2] = useState(null);
+  const [groupPhotos, setGroupPhotos] = useState([]); // [{file, preview}]
+
+  // Selection
   const [selectedEra, setSelectedEra] = useState(null);
   const [selectedMode, setSelectedMode] = useState(null);
   const [customDescription, setCustomDescription] = useState('');
   const [style, setStyle] = useState('balanced');
   const [isTransforming, setIsTransforming] = useState(false);
+
+  // Usage / limits
+  const [userProfile, setUserProfile] = useState(null);
+  const [userEmail, setUserEmail] = useState(null);
+  const [remaining, setRemaining] = useState(FREE_DAILY_LIMIT);
+
+  // Ad gate
+  const [adGateOpen, setAdGateOpen] = useState(false);
+  const [pendingMode, setPendingMode] = useState(null);
+
+  // Share for bonus
+  const [shareForBonus, setShareForBonus] = useState(false);
+  const [lastTransformation, setLastTransformation] = useState(null);
+
+  useEffect(() => {
+    base44.auth.isAuthenticated().then(async (authed) => {
+      if (authed) {
+        const me = await base44.auth.me();
+        setUserEmail(me.email);
+        const profile = await getOrCreateProfile(me.email);
+        setUserProfile(profile);
+        setRemaining(getRemainingToday(profile));
+      }
+    });
+  }, []);
 
   const handlePhotoSelect = (file) => {
     setPhoto(file);
@@ -31,11 +66,7 @@ export default function Home() {
     reader.onload = (e) => setPhotoPreview(e.target.result);
     reader.readAsDataURL(file);
   };
-
-  const handleClearPhoto = () => {
-    setPhoto(null);
-    setPhotoPreview(null);
-  };
+  const handleClearPhoto = () => { setPhoto(null); setPhotoPreview(null); };
 
   const handlePhotoSelect2 = (file) => {
     setPhoto2(file);
@@ -43,24 +74,50 @@ export default function Home() {
     reader.onload = (e) => setPhotoPreview2(e.target.result);
     reader.readAsDataURL(file);
   };
+  const handleClearPhoto2 = () => { setPhoto2(null); setPhotoPreview2(null); };
 
-  const handleClearPhoto2 = () => {
-    setPhoto2(null);
-    setPhotoPreview2(null);
+  const handleGroupAdd = (file, preview) => {
+    setGroupPhotos((prev) => [...prev, { file, preview }]);
+  };
+  const handleGroupRemove = (index) => {
+    setGroupPhotos((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleModeSelect = (modeId) => {
-    const next = selectedMode === modeId ? null : modeId;
-    setSelectedMode(next);
-    setSelectedEra(null);
-    if (next !== 'couples') {
-      setPhoto2(null);
-      setPhotoPreview2(null);
+    const isSame = selectedMode === modeId;
+    if (isSame) {
+      setSelectedMode(null);
+      setSelectedEra(null);
+      setGroupPhotos([]);
+      return;
     }
+
+    // Check if ad-gated and not pro
+    const isPro = userProfile?.plan !== 'free';
+    if (AD_GATED_MODES.includes(modeId) && !isPro) {
+      setPendingMode(modeId);
+      setAdGateOpen(true);
+      return;
+    }
+
+    applyMode(modeId);
+  };
+
+  const applyMode = (modeId) => {
+    setSelectedMode(modeId);
+    setSelectedEra(null);
+    if (modeId !== 'couples') { setPhoto2(null); setPhotoPreview2(null); }
+    if (modeId !== 'group') { setGroupPhotos([]); }
+  };
+
+  const handleAdUnlocked = () => {
+    if (pendingMode) applyMode(pendingMode);
+    setPendingMode(null);
   };
 
   const handleTransform = async () => {
     if (!photo || !selectedEra) return;
+    if (remaining <= 0) return;
 
     setIsTransforming(true);
     const isCustom = selectedEra === 'custom';
@@ -77,9 +134,17 @@ export default function Home() {
 
     const { file_url } = await base44.integrations.Core.UploadFile({ file: photo });
     const extraUrls = [];
+
     if (selectedMode === 'couples' && photo2) {
       const { file_url: url2 } = await base44.integrations.Core.UploadFile({ file: photo2 });
       extraUrls.push(url2);
+    }
+
+    if (selectedMode === 'group' && groupPhotos.length > 0) {
+      for (const gp of groupPhotos) {
+        const { file_url: gUrl } = await base44.integrations.Core.UploadFile({ file: gp.file });
+        extraUrls.push(gUrl);
+      }
     }
 
     const transformation = await base44.entities.Transformation.create({
@@ -99,6 +164,15 @@ export default function Home() {
       status: 'completed',
     });
 
+    // Consume a daily generation
+    if (userProfile) {
+      await consumeTransformation(userProfile);
+      const updated = await getOrCreateProfile(userEmail);
+      setUserProfile(updated);
+      setRemaining(getRemainingToday(updated));
+    }
+
+    setLastTransformation({ ...transformation, transformed_photo_url: result.url, era_label: isCustom ? customDescription.slice(0, 40) : baseEra.label });
     setIsTransforming(false);
     navigate(`/result/${transformation.id}`);
   };
@@ -109,9 +183,13 @@ export default function Home() {
     ? ERAS.filter((e) => activeMode.eraIds.includes(e.id))
     : ERAS;
 
-  const canTransform = photo && selectedEra && !isTransforming &&
+  const isGroup = selectedMode === 'group';
+  const isCouples = selectedMode === 'couples';
+
+  const canTransform = photo && selectedEra && !isTransforming && remaining > 0 &&
     !(selectedEra === 'custom' && !customDescription.trim()) &&
-    !(selectedMode === 'couples' && !photo2);
+    !(isCouples && !photo2) &&
+    !(isGroup && groupPhotos.length === 0);
 
   return (
     <div className="min-h-screen">
@@ -120,6 +198,13 @@ export default function Home() {
           <TransformingOverlay eraLabel={selectedEra === 'custom' ? customDescription.slice(0, 30) : activeEra?.label} />
         )}
       </AnimatePresence>
+
+      <AdGateModal
+        open={adGateOpen}
+        onOpenChange={setAdGateOpen}
+        modeName={SPECIAL_MODES.find(m => m.id === pendingMode)?.label || ''}
+        onUnlocked={handleAdUnlocked}
+      />
 
       {/* Header */}
       <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-3">
@@ -135,36 +220,56 @@ export default function Home() {
             <h1 className="font-display text-xl font-bold text-foreground leading-tight">Chronos Booth</h1>
             <p className="text-muted-foreground text-[10px] leading-none">Cinematic AI Time Travel</p>
           </div>
+          {userProfile && (
+            <div className="ml-auto text-right">
+              <p className="text-[10px] text-muted-foreground">Today</p>
+              <p className="text-xs font-bold text-primary">{remaining === Infinity ? '∞' : remaining} left</p>
+            </div>
+          )}
         </motion.div>
       </div>
 
+      {/* Limit Banner */}
+      <LimitBanner
+        remaining={remaining}
+        onShareForBonus={() => lastTransformation && setShareForBonus(true)}
+      />
+
+      {/* Share for bonus sheet */}
+      {lastTransformation && (
+        <ShareSheet
+          open={shareForBonus}
+          onOpenChange={setShareForBonus}
+          transformation={lastTransformation}
+        />
+      )}
+
       {/* Photo Upload Section */}
       <div className="px-5 mb-5">
-        {selectedMode === 'couples' ? (
+        {isCouples ? (
           <div className="flex gap-3">
             <div className="flex-1">
               <p className="text-xs text-muted-foreground text-center mb-2 font-medium">Person 1</p>
-              <PhotoUploader
-                photoPreview={photoPreview}
-                onPhotoSelect={handlePhotoSelect}
-                onClear={handleClearPhoto}
-              />
+              <PhotoUploader photoPreview={photoPreview} onPhotoSelect={handlePhotoSelect} onClear={handleClearPhoto} />
             </div>
             <div className="flex-1">
               <p className="text-xs text-muted-foreground text-center mb-2 font-medium">Person 2</p>
-              <PhotoUploader
-                photoPreview={photoPreview2}
-                onPhotoSelect={handlePhotoSelect2}
-                onClear={handleClearPhoto2}
-              />
+              <PhotoUploader photoPreview={photoPreview2} onPhotoSelect={handlePhotoSelect2} onClear={handleClearPhoto2} />
+            </div>
+          </div>
+        ) : isGroup ? (
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs text-muted-foreground mb-2 font-medium">Main photo (you or anyone in the group)</p>
+              <PhotoUploader photoPreview={photoPreview} onPhotoSelect={handlePhotoSelect} onClear={handleClearPhoto} />
+            </div>
+            <div>
+              <p className="text-xs text-muted-foreground mb-2 font-medium">Add more people</p>
+              <GroupPhotoUploader photos={groupPhotos} onAdd={handleGroupAdd} onRemove={handleGroupRemove} />
             </div>
           </div>
         ) : (
-          <PhotoUploader
-            photoPreview={photoPreview}
-            onPhotoSelect={handlePhotoSelect}
-            onClear={handleClearPhoto}
-          />
+          <PhotoUploader photoPreview={photoPreview} onPhotoSelect={handlePhotoSelect} onClear={handleClearPhoto} />
         )}
       </div>
 
@@ -179,6 +284,8 @@ export default function Home() {
           modes={SPECIAL_MODES}
           selectedMode={selectedMode}
           onSelect={handleModeSelect}
+          adGatedModes={AD_GATED_MODES}
+          userPlan={userProfile?.plan || 'free'}
         />
       </div>
 
@@ -210,13 +317,8 @@ export default function Home() {
           )}
         </div>
 
-        {/* Custom era description input */}
         {selectedEra === 'custom' && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-4"
-          >
+          <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mt-4">
             <textarea
               value={customDescription}
               onChange={(e) => setCustomDescription(e.target.value)}
@@ -239,6 +341,11 @@ export default function Home() {
           {activeMode ? `${activeMode.label} Transform` : 'Transform Me'}
           <ArrowRight className="w-4 h-4" />
         </Button>
+        {remaining === 0 && (
+          <p className="text-center text-xs text-muted-foreground mt-2">
+            Daily limit reached · Share a portrait to earn more
+          </p>
+        )}
       </div>
     </div>
   );

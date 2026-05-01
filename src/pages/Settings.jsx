@@ -155,19 +155,34 @@ export default function Settings() {
                 </div>
               </div>
               {plan === 'free' && (
-                <div className="rounded-xl bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 p-4">
-                  <p className="font-semibold text-foreground text-sm mb-1">Upgrade to Pro</p>
-                  <ul className="space-y-1 mb-3">
-                    {['Unlimited transformations', 'Priority AI processing', 'HD cinematic videos', 'Exclusive eras'].map(f => (
-                      <li key={f} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                        <span className="text-primary">✓</span> {f}
-                      </li>
+                <div className="space-y-3">
+                  <div className="rounded-xl bg-muted/40 border border-border p-3 space-y-1.5">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Free Tier includes</p>
+                    {[
+                      '3 single transformations/day',
+                      'Earn bonus generations by sharing portraits',
+                      'Earn bonus via referral link',
+                      'Unlock Couples & Group modes by watching an ad',
+                    ].map(f => (
+                      <p key={f} className="text-xs text-foreground flex items-start gap-1.5">
+                        <span className="text-primary mt-0.5">✓</span> {f}
+                      </p>
                     ))}
-                  </ul>
-                  <Button className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2 text-sm font-semibold">
-                    <Crown className="w-4 h-4" />
-                    Upgrade to Pro
-                  </Button>
+                  </div>
+                  <div className="rounded-xl bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 p-4">
+                    <p className="font-semibold text-foreground text-sm mb-1">Upgrade to Pro</p>
+                    <ul className="space-y-1 mb-3">
+                      {['Unlimited transformations', 'Couples & Group modes always unlocked', 'Priority AI processing', 'HD cinematic videos'].map(f => (
+                        <li key={f} className="text-xs text-muted-foreground flex items-center gap-1.5">
+                          <span className="text-primary">✓</span> {f}
+                        </li>
+                      ))}
+                    </ul>
+                    <Button className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2 text-sm font-semibold">
+                      <Crown className="w-4 h-4" />
+                      Upgrade to Pro
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
