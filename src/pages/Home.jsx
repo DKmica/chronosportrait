@@ -17,6 +17,7 @@ import { ERAS } from '@/lib/eras';
 import { SPECIAL_MODES, AD_GATED_MODES } from '@/lib/specialModes';
 import StyleSelector, { STYLE_PROMPTS } from '@/components/transform/StyleSelector';
 import { getOrCreateProfile, getRemainingToday, consumeTransformation, FREE_DAILY_LIMIT } from '@/lib/usageLimit';
+import { buildFaceSwapPrompt, buildGroupFaceSwapPrompt } from '@/lib/faceSwapPrompt';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -126,11 +127,20 @@ export default function Home() {
       ? { id: 'custom', label: 'Custom', prompt: customDescription }
       : ERAS.find((e) => e.id === selectedEra);
 
-    const modePrefix = mode ? mode.promptPrefix : '';
     const styleSuffix = STYLE_PROMPTS[style];
-    const finalPrompt = isCustom
-      ? `${modePrefix}Transform this person: ${customDescription}. ${styleSuffix}`
-      : `${modePrefix}${baseEra.prompt} ${styleSuffix}`;
+    const isMultiPerson = selectedMode === 'couples' || selectedMode === 'group';
+
+    let finalPrompt;
+    if (isCustom) {
+      const customEraPrompt = `Transform this person: ${customDescription}.`;
+      finalPrompt = mode && isMultiPerson
+        ? buildGroupFaceSwapPrompt(mode.promptPrefix, customEraPrompt, styleSuffix)
+        : buildFaceSwapPrompt(customEraPrompt, styleSuffix);
+    } else {
+      finalPrompt = mode && isMultiPerson
+        ? buildGroupFaceSwapPrompt(mode.promptPrefix, baseEra.prompt, styleSuffix)
+        : buildFaceSwapPrompt(baseEra.prompt, styleSuffix);
+    }
 
     const { file_url } = await base44.integrations.Core.UploadFile({ file: photo });
     const extraUrls = [];
