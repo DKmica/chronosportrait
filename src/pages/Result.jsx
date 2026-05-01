@@ -18,8 +18,10 @@ export default function Result() {
 
   const { data: transformation, isLoading } = useQuery({
     queryKey: ['transformation', id],
-    queryFn: () => base44.entities.Transformation.filter({ id }),
-    select: (data) => data[0],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('getTransformation', { id });
+      return res.data.transformation;
+    },
   });
 
   const t = liveTransformation || transformation;
