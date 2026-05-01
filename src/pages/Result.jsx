@@ -3,7 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Download, Share2, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Download, RotateCcw } from 'lucide-react';
+import ShareButton from '@/components/result/ShareButton';
 import { Button } from '@/components/ui/button';
 import VideoGenerator from '@/components/result/VideoGenerator';
 import ShareToCommunityButton from '@/components/community/ShareToCommmunityButton';
@@ -101,21 +102,7 @@ export default function Result() {
             <Download className="w-4 h-4" />
             Save Photo
           </Button>
-          <Button
-            variant="outline"
-            className="flex-1 h-12 rounded-xl gap-2 border-border"
-            onClick={() => {
-              if (navigator.share && t.transformed_photo_url) {
-                navigator.share({
-                  title: `My ${t.era_label} transformation`,
-                  url: t.transformed_photo_url,
-                });
-              }
-            }}
-          >
-            <Share2 className="w-4 h-4" />
-            Share
-          </Button>
+          <ShareButton transformation={t} />
         </div>
 
         {t.status === 'completed' && t.transformed_photo_url && (
