@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Download, Share2, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import VideoGenerator from '@/components/result/VideoGenerator';
+import ShareToCommunityButton from '@/components/community/ShareToCommmunityButton';
 
 export default function Result() {
   const { id } = useParams();
@@ -116,6 +117,10 @@ export default function Result() {
             Share
           </Button>
         </div>
+
+        {t.status === 'completed' && t.transformed_photo_url && (
+          <ShareToCommunityButton transformation={t} />
+        )}
 
         <Button
           onClick={() => navigate('/')}

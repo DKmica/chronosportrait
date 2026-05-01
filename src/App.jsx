@@ -9,6 +9,7 @@ import AppLayout from '@/components/layout/AppLayout';
 import Home from '@/pages/Home';
 import Result from '@/pages/Result';
 import Gallery from '@/pages/Gallery';
+import Community from '@/pages/Community';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -39,6 +40,7 @@ const AuthenticatedApp = () => {
       <Route element={<AppLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/gallery" element={<Gallery />} />
+        <Route path="/community" element={<Community />} />
         <Route path="/result/:id" element={<Result />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />

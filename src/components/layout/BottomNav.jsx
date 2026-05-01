@@ -1,11 +1,12 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Camera, Image, Sparkles } from 'lucide-react';
+import { Image, Sparkles, Users } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const navItems = [
   { path: '/', icon: Sparkles, label: 'Transform' },
   { path: '/gallery', icon: Image, label: 'Gallery' },
+  { path: '/community', icon: Users, label: 'Community' },
 ];
 
 export default function BottomNav() {
@@ -20,7 +21,7 @@ export default function BottomNav() {
             <Link
               key={path}
               to={path}
-              className="flex flex-col items-center gap-1 px-6 py-1 relative"
+              className="flex flex-col items-center gap-1 px-4 py-1 relative"
             >
               {isActive && (
                 <motion.div

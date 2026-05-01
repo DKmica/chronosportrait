@@ -1,0 +1,42 @@
+{
+  "name": "CommunityPost",
+  "type": "object",
+  "properties": {
+    "transformation_id": {
+      "type": "string",
+      "description": "ID of the linked Transformation"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL of the shared portrait"
+    },
+    "era_label": {
+      "type": "string",
+      "description": "Era label of the portrait"
+    },
+    "caption": {
+      "type": "string",
+      "description": "Optional caption by the user"
+    },
+    "author_name": {
+      "type": "string",
+      "description": "Display name of the poster"
+    },
+    "likes_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of likes"
+    },
+    "liked_by": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of user emails who liked this post"
+    }
+  },
+  "required": [
+    "image_url",
+    "era_label"
+  ]
+}
