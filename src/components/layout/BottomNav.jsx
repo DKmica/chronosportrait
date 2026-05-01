@@ -1,10 +1,11 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Image, Sparkles, Users, Settings } from 'lucide-react';
+import { Image, Sparkles, Users, Settings, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const navItems = [
   { path: '/', icon: Sparkles, label: 'Transform' },
+  { path: '/find-timeline', icon: Zap, label: 'My Era' },
   { path: '/gallery', icon: Image, label: 'Gallery' },
   { path: '/community', icon: Users, label: 'Community' },
   { path: '/settings', icon: Settings, label: 'Settings' },

@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Crown, LogOut, Bell, Trash2, ChevronRight, Sparkles, Shield, Star } from 'lucide-react';
+import { User, Crown, LogOut, ChevronRight, Sparkles, Shield, Star } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 
 const PLAN_LABELS = {
   free: { label: 'Free', color: 'text-muted-foreground', bg: 'bg-muted/50' },
@@ -12,6 +13,7 @@ const PLAN_LABELS = {
 };
 
 export default function Settings() {
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(null);
 
   const { data: user } = useQuery({
@@ -224,11 +226,12 @@ export default function Settings() {
               <h3 className="font-display text-sm font-semibold text-muted-foreground uppercase tracking-wider">About</h3>
             </div>
             {[
-              { icon: Shield, label: 'Privacy Policy' },
-              { icon: Star, label: 'Rate the App' },
-            ].map(({ icon: Icon, label }) => (
+              { icon: Shield, label: 'Privacy & Terms', action: () => navigate('/legal') },
+              { icon: Star, label: 'Rate the App', action: () => {} },
+            ].map(({ icon: Icon, label, action }) => (
               <button
                 key={label}
+                onClick={action}
                 className="w-full flex items-center gap-3 px-5 py-4 border-b border-border last:border-0 hover:bg-muted/30 transition-colors"
               >
                 <Icon className="w-4 h-4 text-muted-foreground" />

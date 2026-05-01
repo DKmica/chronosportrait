@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, ArrowRight, Clock } from 'lucide-react';
+import { Sparkles, ArrowRight, Clock, Zap, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import PhotoUploader from '@/components/transform/PhotoUploader';
@@ -221,14 +221,14 @@ export default function Home() {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 mb-3"
         >
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center">
             <Clock className="w-4 h-4 text-primary-foreground" />
           </div>
           <div>
             <h1 className="font-display text-xl font-bold text-foreground leading-tight">Chronos Booth</h1>
-            <p className="text-muted-foreground text-[10px] leading-none">Cinematic AI Time Travel</p>
+            <p className="text-muted-foreground text-[10px] leading-none">See who you were in another era.</p>
           </div>
           {userProfile && (
             <div className="ml-auto text-right">
@@ -237,6 +237,24 @@ export default function Home() {
             </div>
           )}
         </motion.div>
+
+        {/* Quick-action strip */}
+        <div className="flex gap-2">
+          <Link
+            to="/find-timeline"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-colors"
+          >
+            <Zap className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-bold text-primary">Find My Timeline</span>
+          </Link>
+          <Link
+            to="/era-pack"
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-accent/10 border border-accent/20 hover:bg-accent/20 transition-colors"
+          >
+            <Package className="w-3.5 h-3.5 text-accent" />
+            <span className="text-xs font-bold text-accent">Era Pack</span>
+          </Link>
+        </div>
       </div>
 
       {/* Limit Banner */}
@@ -348,7 +366,7 @@ export default function Home() {
           className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold text-base gap-2 disabled:opacity-30"
         >
           <Sparkles className="w-5 h-5" />
-          {activeMode ? `${activeMode.label} Transform` : 'Transform Me'}
+          {activeMode ? `${activeMode.label} Transform` : 'Unlock My Past Life Portrait'}
           <ArrowRight className="w-4 h-4" />
         </Button>
         {remaining === 0 && (

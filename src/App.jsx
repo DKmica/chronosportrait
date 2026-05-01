@@ -11,6 +11,10 @@ import Result from '@/pages/Result';
 import Gallery from '@/pages/Gallery';
 import Community from '@/pages/Community';
 import Settings from '@/pages/Settings';
+import Onboarding from '@/pages/Onboarding';
+import FindTimeline from '@/pages/FindTimeline';
+import EraPack from '@/pages/EraPack';
+import Legal from '@/pages/Legal';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -38,12 +42,16 @@ const AuthenticatedApp = () => {
   // Render the main app
   return (
     <Routes>
+      <Route path="/onboarding" element={<Onboarding />} />
       <Route element={<AppLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/gallery" element={<Gallery />} />
         <Route path="/community" element={<Community />} />
         <Route path="/result/:id" element={<Result />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/find-timeline" element={<FindTimeline />} />
+        <Route path="/era-pack" element={<EraPack />} />
+        <Route path="/legal" element={<Legal />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
