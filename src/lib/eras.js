@@ -83,4 +83,81 @@ export const ERAS = [
     image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&q=80',
     prompt: 'Transform this person into a Wild West cowboy or cowgirl, wearing a wide-brimmed hat, leather duster coat, bandana, standing in a dusty western town with saloon doors, golden hour sunset, cinematic western movie style'
   },
+  {
+    id: 'viking',
+    label: 'Viking Warrior',
+    period: '793 – 1066 AD',
+    image: 'https://images.unsplash.com/photo-1551269901-5c5e14c25df7?w=400&q=80',
+    prompt: 'Transform this person into a fierce Norse Viking warrior, wearing a horned helmet, fur-lined armor, braided hair and beard, holding an axe, standing on a longship with stormy fjords in the background, cinematic epic lighting, photorealistic'
+  },
+  {
+    id: 'feudal_japan',
+    label: 'Feudal Japan',
+    period: '1185 – 1868',
+    image: 'https://images.unsplash.com/photo-1528360983277-13d401cdc186?w=400&q=80',
+    prompt: 'Transform this person into a noble samurai or geisha in feudal Japan, wearing ornate silk kimono or full samurai armor with kabuto helmet, cherry blossom trees and a traditional pagoda in the background, painterly cinematic style, photorealistic'
+  },
+  {
+    id: 'aztec',
+    label: 'Aztec Empire',
+    period: '1300 – 1521',
+    image: 'https://images.unsplash.com/photo-1518638150340-f706e86654de?w=400&q=80',
+    prompt: 'Transform this person into an Aztec warrior or priestess, wearing elaborate feathered headdress, jade jewelry, painted body art, standing atop a grand pyramid temple under a blazing sun, epic cinematic lighting, photorealistic'
+  },
+  {
+    id: 'prohibition',
+    label: 'Prohibition Era',
+    period: '1920s Gangster',
+    image: 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=400&q=80',
+    prompt: 'Transform this person into a 1920s prohibition-era gangster or mob boss, wearing a sharp pinstripe double-breasted suit, fedora hat, pocket square, standing in a dimly lit speakeasy with smoky atmosphere and jazz musicians in the background, noir cinematic style'
+  },
+  {
+    id: 'ancient_china',
+    label: 'Imperial China',
+    period: '221 BC – 1912',
+    image: 'https://images.unsplash.com/photo-1508804185872-d7badad00f7d?w=400&q=80',
+    prompt: 'Transform this person into an Imperial Chinese emperor or empress, wearing richly embroidered dragon robes, ornate golden crown, standing in the Forbidden City courtyard with red lacquered columns, cinematic golden lighting, photorealistic'
+  },
+  {
+    id: 'swinging_60s',
+    label: 'Swinging 60s',
+    period: '1960s',
+    image: 'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=400&q=80',
+    prompt: 'Transform this person into a 1960s mod fashion icon, wearing bold geometric patterns, go-go boots or a sharp suit, with a psychedelic pop art background and neon colors, vintage film photography aesthetic'
+  },
+  {
+    id: 'post_apocalyptic',
+    label: 'Post-Apocalyptic',
+    period: '2150',
+    image: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&q=80',
+    prompt: 'Transform this person into a post-apocalyptic survivor, wearing scavenged armor made from car parts and leather straps, face paint and battle scars, standing in a wasteland with ruined skyscrapers and a red stormy sky, Mad Max style cinematic, photorealistic'
+  },
+  {
+    id: 'steampunk',
+    label: 'Steampunk',
+    period: 'Alternate 1800s',
+    image: 'https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?w=400&q=80',
+    prompt: 'Transform this person into a steampunk inventor or airship captain, wearing brass goggles, Victorian coat with clockwork gears, leather straps with mechanical gadgets, standing in a steam-filled workshop with dirigibles visible through the window, cinematic photorealistic'
+  },
+  {
+    id: 'ancient_india',
+    label: 'Mughal Empire',
+    period: '1526 – 1857',
+    image: 'https://images.unsplash.com/photo-1524492412937-b28074a5d7da?w=400&q=80',
+    prompt: 'Transform this person into a Mughal emperor or royal princess, wearing richly jeweled silk robes, ornate turban or dupatta with pearls and rubies, seated in an opulent palace with marble archways and reflecting pools, cinematic warm golden lighting, photorealistic'
+  },
+  {
+    id: 'disco',
+    label: 'Disco Era',
+    period: '1970s',
+    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&q=80',
+    prompt: 'Transform this person into a 1970s disco star, wearing a shimmering sequined jumpsuit or platform shoes and bell-bottoms, surrounded by mirror balls and colorful dance floor lights at Studio 54, vintage film grain effect, photorealistic'
+  },
+  {
+    id: 'fantasy_elf',
+    label: 'Fantasy Elf',
+    period: 'High Fantasy',
+    image: 'https://images.unsplash.com/photo-1518709766631-a6a7f45921c3?w=400&q=80',
+    prompt: 'Transform this person into a high fantasy elven royalty, with pointed ears, ethereal flowing silver robes, glowing magical runes on skin, standing in an enchanted forest with bioluminescent trees and floating lights, epic fantasy art style, photorealistic'
+  },
 ];
