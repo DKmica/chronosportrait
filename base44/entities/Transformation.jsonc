@@ -10,6 +10,21 @@
       "type": "string",
       "description": "URL of the AI-generated transformed photo"
     },
+    "video_url": {
+      "type": "string",
+      "description": "URL of the AI-generated cinematic looping video"
+    },
+    "video_status": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "processing",
+        "completed",
+        "failed"
+      ],
+      "default": "idle",
+      "description": "Status of the video generation"
+    },
     "era": {
       "type": "string",
       "description": "The era or scenario chosen for transformation"
