@@ -3,17 +3,18 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Download, RotateCcw } from 'lucide-react';
-import ShareButton from '@/components/result/ShareButton';
+import { ArrowLeft, Download, RotateCcw, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import VideoGenerator from '@/components/result/VideoGenerator';
 import ShareToCommunityButton from '@/components/community/ShareToCommmunityButton';
+import ShareSheet from '@/components/share/ShareSheet';
 
 export default function Result() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [liveTransformation, setLiveTransformation] = useState(null);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const { data: transformation, isLoading } = useQuery({
     queryKey: ['transformation', id],
@@ -102,8 +103,16 @@ export default function Result() {
             <Download className="w-4 h-4" />
             Save Photo
           </Button>
-          <ShareButton transformation={t} />
+          <Button
+            variant="outline"
+            className="flex-1 h-12 rounded-xl gap-2 border-border"
+            onClick={() => setShareOpen(true)}
+          >
+            <Share2 className="w-4 h-4" />
+            Share
+          </Button>
         </div>
+        <ShareSheet open={shareOpen} onOpenChange={setShareOpen} transformation={t} />
 
         {t.status === 'completed' && t.transformed_photo_url && (
           <ShareToCommunityButton transformation={t} />

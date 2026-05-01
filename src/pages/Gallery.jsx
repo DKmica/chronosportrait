@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Image, Sparkles } from 'lucide-react';
+import { Image, Sparkles, Share2 } from 'lucide-react';
+import ShareSheet from '@/components/share/ShareSheet';
 
 export default function Gallery() {
+  const [shareTarget, setShareTarget] = useState(null);
   const { data: transformations = [], isLoading } = useQuery({
     queryKey: ['transformations'],
     queryFn: () => base44.entities.Transformation.list('-created_date', 50),
@@ -41,6 +43,7 @@ export default function Gallery() {
           </p>
         </div>
       ) : (
+        <>
         <div className="px-5 grid grid-cols-2 gap-3">
           {completed.map((item, index) => (
             <motion.div
@@ -48,6 +51,7 @@ export default function Gallery() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
+              className="relative"
             >
               <Link
                 to={`/result/${item.id}`}
@@ -65,9 +69,18 @@ export default function Gallery() {
                   </p>
                 </div>
               </Link>
+              {/* Share button overlay */}
+              <button
+                onClick={(e) => { e.preventDefault(); setShareTarget(item); }}
+                className="absolute top-2 right-2 w-8 h-8 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-black/70 transition-colors"
+              >
+                <Share2 className="w-3.5 h-3.5 text-white" />
+              </button>
             </motion.div>
           ))}
         </div>
+        <ShareSheet open={!!shareTarget} onOpenChange={(v) => !v && setShareTarget(null)} transformation={shareTarget} />
+        </>
       )}
     </div>
   );
