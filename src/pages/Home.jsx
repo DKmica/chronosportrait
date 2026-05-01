@@ -17,6 +17,8 @@ export default function Home() {
   const navigate = useNavigate();
   const [photo, setPhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [photo2, setPhoto2] = useState(null);
+  const [photoPreview2, setPhotoPreview2] = useState(null);
   const [selectedEra, setSelectedEra] = useState(null);
   const [selectedMode, setSelectedMode] = useState(null);
   const [customDescription, setCustomDescription] = useState('');
@@ -35,9 +37,26 @@ export default function Home() {
     setPhotoPreview(null);
   };
 
+  const handlePhotoSelect2 = (file) => {
+    setPhoto2(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setPhotoPreview2(e.target.result);
+    reader.readAsDataURL(file);
+  };
+
+  const handleClearPhoto2 = () => {
+    setPhoto2(null);
+    setPhotoPreview2(null);
+  };
+
   const handleModeSelect = (modeId) => {
-    setSelectedMode(selectedMode === modeId ? null : modeId);
+    const next = selectedMode === modeId ? null : modeId;
+    setSelectedMode(next);
     setSelectedEra(null);
+    if (next !== 'couples') {
+      setPhoto2(null);
+      setPhotoPreview2(null);
+    }
   };
 
   const handleTransform = async () => {
@@ -57,6 +76,11 @@ export default function Home() {
       : `${modePrefix}${baseEra.prompt} ${styleSuffix}`;
 
     const { file_url } = await base44.integrations.Core.UploadFile({ file: photo });
+    const extraUrls = [];
+    if (selectedMode === 'couples' && photo2) {
+      const { file_url: url2 } = await base44.integrations.Core.UploadFile({ file: photo2 });
+      extraUrls.push(url2);
+    }
 
     const transformation = await base44.entities.Transformation.create({
       original_photo_url: file_url,
@@ -67,7 +91,7 @@ export default function Home() {
 
     const result = await base44.integrations.Core.GenerateImage({
       prompt: finalPrompt,
-      existing_image_urls: [file_url],
+      existing_image_urls: [file_url, ...extraUrls],
     });
 
     await base44.entities.Transformation.update(transformation.id, {
@@ -86,7 +110,8 @@ export default function Home() {
     : ERAS;
 
   const canTransform = photo && selectedEra && !isTransforming &&
-    !(selectedEra === 'custom' && !customDescription.trim());
+    !(selectedEra === 'custom' && !customDescription.trim()) &&
+    !(selectedMode === 'couples' && !photo2);
 
   return (
     <div className="min-h-screen">
@@ -115,11 +140,32 @@ export default function Home() {
 
       {/* Photo Upload Section */}
       <div className="px-5 mb-5">
-        <PhotoUploader
-          photoPreview={photoPreview}
-          onPhotoSelect={handlePhotoSelect}
-          onClear={handleClearPhoto}
-        />
+        {selectedMode === 'couples' ? (
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <p className="text-xs text-muted-foreground text-center mb-2 font-medium">Person 1</p>
+              <PhotoUploader
+                photoPreview={photoPreview}
+                onPhotoSelect={handlePhotoSelect}
+                onClear={handleClearPhoto}
+              />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs text-muted-foreground text-center mb-2 font-medium">Person 2</p>
+              <PhotoUploader
+                photoPreview={photoPreview2}
+                onPhotoSelect={handlePhotoSelect2}
+                onClear={handleClearPhoto2}
+              />
+            </div>
+          </div>
+        ) : (
+          <PhotoUploader
+            photoPreview={photoPreview}
+            onPhotoSelect={handlePhotoSelect}
+            onClear={handleClearPhoto}
+          />
+        )}
       </div>
 
       {/* Special Modes */}
