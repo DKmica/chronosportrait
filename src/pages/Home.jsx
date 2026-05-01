@@ -11,6 +11,7 @@ import SpecialModeBar from '@/components/transform/SpecialModeBar';
 import TransformingOverlay from '@/components/transform/TransformingOverlay';
 import { ERAS } from '@/lib/eras';
 import { SPECIAL_MODES } from '@/lib/specialModes';
+import StyleSelector, { STYLE_PROMPTS } from '@/components/transform/StyleSelector';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function Home() {
   const [selectedEra, setSelectedEra] = useState(null);
   const [selectedMode, setSelectedMode] = useState(null);
   const [customDescription, setCustomDescription] = useState('');
+  const [style, setStyle] = useState('balanced');
   const [isTransforming, setIsTransforming] = useState(false);
 
   const handlePhotoSelect = (file) => {
@@ -49,9 +51,10 @@ export default function Home() {
       : ERAS.find((e) => e.id === selectedEra);
 
     const modePrefix = mode ? mode.promptPrefix : '';
+    const styleSuffix = STYLE_PROMPTS[style];
     const finalPrompt = isCustom
-      ? `${modePrefix}Transform this person: ${customDescription}. Photorealistic, cinematic lighting, high quality.`
-      : `${modePrefix}${baseEra.prompt}`;
+      ? `${modePrefix}Transform this person: ${customDescription}. ${styleSuffix}`
+      : `${modePrefix}${baseEra.prompt} ${styleSuffix}`;
 
     const { file_url } = await base44.integrations.Core.UploadFile({ file: photo });
 
@@ -131,6 +134,11 @@ export default function Home() {
           selectedMode={selectedMode}
           onSelect={handleModeSelect}
         />
+      </div>
+
+      {/* Style Selector */}
+      <div className="mb-5">
+        <StyleSelector value={style} onChange={setStyle} />
       </div>
 
       {/* Era Selection */}
