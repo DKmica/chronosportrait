@@ -6,6 +6,13 @@
       "type": "string",
       "description": "URL of the original uploaded photo"
     },
+    "extra_photo_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "URLs of additional uploaded photos (couples/group mode)"
+    },
     "transformed_photo_url": {
       "type": "string",
       "description": "URL of the AI-generated transformed photo"

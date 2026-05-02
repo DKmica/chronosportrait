@@ -78,9 +78,16 @@ export default function Result() {
 
       {/* Before / After Comparison */}
       <div className="px-5 mt-4">
-        <p className="text-muted-foreground text-xs mb-2 font-medium uppercase tracking-wider">Original</p>
-        <div className="w-20 h-20 rounded-xl overflow-hidden border-2 border-border">
-          <img src={t.original_photo_url} alt="Original" className="w-full h-full object-cover" />
+        <p className="text-muted-foreground text-xs mb-2 font-medium uppercase tracking-wider">Original{t.extra_photo_urls?.length > 0 ? 's' : ''}</p>
+        <div className="flex gap-2 flex-wrap">
+          <div className="w-20 h-20 rounded-xl overflow-hidden border-2 border-border flex-shrink-0">
+            <img src={t.original_photo_url} alt="Original" className="w-full h-full object-cover" />
+          </div>
+          {t.extra_photo_urls?.map((url, i) => (
+            <div key={i} className="w-20 h-20 rounded-xl overflow-hidden border-2 border-border flex-shrink-0">
+              <img src={url} alt={`Person ${i + 2}`} className="w-full h-full object-cover" />
+            </div>
+          ))}
         </div>
       </div>
 

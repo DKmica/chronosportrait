@@ -175,6 +175,7 @@ export default function Home() {
 
     const transformation = await base44.entities.Transformation.create({
       original_photo_url: file_url,
+      extra_photo_urls: extraUrls.length > 0 ? extraUrls : [],
       era: baseEra.id,
       era_label: isCustom ? customDescription.slice(0, 40) : baseEra.label,
       status: 'processing',
@@ -183,6 +184,7 @@ export default function Home() {
     const result = await base44.integrations.Core.GenerateImage({
       prompt: finalPrompt,
       existing_image_urls: [file_url, ...extraUrls],
+      model: 'gpt_5_5',
     });
 
     await base44.entities.Transformation.update(transformation.id, {
