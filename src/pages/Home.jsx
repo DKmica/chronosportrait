@@ -184,7 +184,7 @@ export default function Home() {
     const result = await base44.integrations.Core.GenerateImage({
       prompt: finalPrompt,
       existing_image_urls: [file_url, ...extraUrls],
-      model: 'gpt_5_5',
+      model: 'gemini_3_1_pro',
     });
 
     await base44.entities.Transformation.update(transformation.id, {
