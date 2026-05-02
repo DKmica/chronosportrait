@@ -5,12 +5,13 @@
  */
 
 export const FACE_PRESERVATION_PREFIX = `CRITICAL FACE-SWAP INSTRUCTIONS:
-Perform a precise face-swap transformation. 
-- Meticulously preserve the EXACT facial features of the person in the reference image: face shape, bone structure, eye color and shape, nose shape, mouth shape, lip fullness, skin tone, eyebrow shape, and natural expression.
-- The subject's face must be IDENTICAL to the input photo — only the costume, hairstyle, background, and lighting should change to match the target era.
-- Do NOT alter facial proportions, do NOT smooth skin excessively, do NOT change eye color or facial structure.
-- The result must be immediately recognizable as the same person.
-- High-fidelity portrait, photorealistic, 8K detail on face.
+You are given reference photo(s) of real people. Your ONLY job is to re-dress and re-contextualize them — their faces must be pixel-perfect copies from the reference images.
+- COPY the exact face from each reference photo: face shape, bone structure, eye color, eye shape, nose, mouth, lips, skin tone, eyebrows, freckles, wrinkles, and any distinguishing features.
+- The face in the output MUST be immediately recognizable as the exact same person in the reference photo.
+- DO NOT generate a generic or idealized face. DO NOT smooth, beautify, or alter the face in any way.
+- DO NOT change eye color. DO NOT change face shape. DO NOT change skin tone.
+- ONLY change: clothing/costume, hairstyle, background, lighting, and era-appropriate props.
+- Ultra high-fidelity face, photorealistic, 8K detail, exact likeness.
 `;
 
 /**
@@ -31,12 +32,13 @@ export function buildFaceSwapPrompt(eraPrompt, styleSuffix = '') {
  * @returns {string}
  */
 export function buildGroupFaceSwapPrompt(modePrefix, eraPrompt, styleSuffix = '') {
-  const multiPrefix = `CRITICAL FACE-SWAP INSTRUCTIONS:
-Perform a precise multi-person face-swap transformation.
-- Preserve the EXACT facial features of EVERY person in the reference images: their individual face shapes, eye colors, nose shapes, skin tones, and expressions must remain identical.
-- Each person must be immediately recognizable as themselves.
-- Only costumes, hairstyles, background, and lighting change to match the target era.
-- Keep all faces high-fidelity and photorealistic, 8K detail.
+  const multiPrefix = `CRITICAL MULTI-PERSON FACE-SWAP INSTRUCTIONS:
+You are given multiple reference photos of different real people. Reproduce EVERY person's face with exact fidelity.
+- For EACH reference photo provided, copy that person's face EXACTLY into the output: face shape, bone structure, eye color, eye shape, nose, mouth, skin tone, distinguishing marks.
+- Place each person side by side in the same scene. Every individual face must be immediately recognizable as the specific person in their reference photo.
+- DO NOT merge faces. DO NOT generate generic faces. DO NOT idealize or beautify any face.
+- ONLY change: clothing/costume, hairstyle, background, lighting, and era-appropriate props.
+- Ultra high-fidelity faces, photorealistic, 8K detail, exact likenesses for all people.
 `;
   return `${multiPrefix}\n${modePrefix}\nERA TRANSFORMATION:\n${eraPrompt}\n\n${styleSuffix}`.trim();
 }

@@ -6,10 +6,10 @@ export const SPECIAL_MODES = [
     id: 'group',
     label: 'Group',
     emoji: '👥',
-    description: 'Up to unlimited people in one scene',
-    promptPrefix: 'This is a group of multiple people. Transform ALL of them together in one cohesive, cinematic scene, each person clearly visible and era-appropriate. ',
+    description: 'Transform a group photo',
+    promptPrefix: 'Multiple reference photos are provided — one per person. Each person in the output must have the EXACT face from their corresponding reference photo. Show all of them together in one cohesive cinematic scene with era-appropriate costumes. ',
     eraIds: null,
-    isPro: false, // unlockable via ad watch
+    isPro: false,
     isGroup: true,
   },
   {
@@ -17,8 +17,8 @@ export const SPECIAL_MODES = [
     label: 'Couples',
     emoji: '💑',
     description: 'For two people together',
-    promptPrefix: 'This is a couple. Transform both people together in the same scene, side by side, romantic and cinematic. ',
-    eraIds: null, // all eras
+    promptPrefix: 'Two reference photos are provided — one per person. Each person in the output must have the EXACT face from their corresponding reference photo. Show both together, side by side, romantic and cinematic, with era-appropriate costumes. ',
+    eraIds: null,
   },
   {
     id: 'kids',
@@ -42,6 +42,6 @@ export const SPECIAL_MODES = [
     emoji: '🎂',
     description: 'Celebratory portrait',
     promptPrefix: 'This is a birthday portrait. Add festive, celebratory elements appropriate to the era — banners, confetti, candles, or period-appropriate decorations. Make it feel like a celebration. ',
-    eraIds: null, // all eras
+    eraIds: null,
   },
 ];
