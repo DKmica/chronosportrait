@@ -31,10 +31,8 @@ async function falQueue(endpoint, bodyObj) {
   const requestId = submit.request_id;
   if (!requestId) throw new Error(`No request_id from queue submit: ${JSON.stringify(submit)}`);
 
-  // Use the response_url and status_url if provided (Fal v2 pattern)
   const statusUrl = submit.status_url || `https://queue.fal.run/requests/${requestId}/status`;
   const responseUrl = submit.response_url || `https://queue.fal.run/requests/${requestId}`;
-  console.log('Status URL:', statusUrl);
 
   for (let i = 0; i < 60; i++) {
     await new Promise(r => setTimeout(r, 3000));
@@ -70,38 +68,85 @@ Deno.serve(async (req) => {
     }
 
     const { prompt, original_photo_url, extra_photo_urls = [] } = body;
-    console.log('Params:', { prompt: prompt?.slice(0, 50), original_photo_url, extra_count: extra_photo_urls.length });
+    console.log('Params:', { prompt: prompt?.slice(0, 80), original_photo_url, extra_count: extra_photo_urls.length });
 
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     if (!original_photo_url) return Response.json({ error: 'original_photo_url is required' }, { status: 400 });
 
-    // Step 1: Flux Redux — style the image to match the era
-    const fluxResult = await falQueue('fal-ai/flux-pro/v1.1/redux', {
-      image_url: original_photo_url,
-      prompt: prompt,
-      num_images: 1,
-      guidance_scale: 3.5,
-      num_inference_steps: 28,
-      image_size: 'portrait_4_3',
-    });
+    const allPhotos = [original_photo_url, ...extra_photo_urls];
+    console.log('Total photos:', allPhotos.length);
 
-    const generatedUrl = fluxResult?.images?.[0]?.url;
-    if (!generatedUrl) throw new Error(`No image URL from Flux Redux: ${JSON.stringify(fluxResult)}`);
-    console.log('Flux done, url:', generatedUrl.slice(0, 60));
+    let finalUrl;
 
-    // Step 2: Face swap — put original face onto era image
-    const faceSwapResult = await falRun('fal-ai/face-swap', {
-      base_image_url: generatedUrl,
-      swap_image_url: original_photo_url,
-    });
+    if (allPhotos.length === 1) {
+      // Single person: use flux-pro image-to-image (img2img) so the prompt is actually applied
+      // strength controls how much the prompt overrides the original (0=keep original, 1=ignore original)
+      const result = await falQueue('fal-ai/flux-pro/v1.1-ultra', {
+        image_url: original_photo_url,
+        prompt: prompt,
+        image_prompt_strength: 0.15, // 0.15 = heavily guided by text prompt, keeps face loosely
+        num_images: 1,
+        output_format: 'jpeg',
+      });
 
-    const finalUrl = faceSwapResult?.image?.url;
-    if (!finalUrl) throw new Error(`No image URL from face swap: ${JSON.stringify(faceSwapResult)}`);
-    console.log('Face swap done, url:', finalUrl.slice(0, 60));
+      console.log('Ultra result:', JSON.stringify(result).slice(0, 200));
+      const generatedUrl = result?.images?.[0]?.url;
+      if (!generatedUrl) throw new Error(`No image from flux-pro ultra: ${JSON.stringify(result)}`);
+      console.log('Generated url:', generatedUrl.slice(0, 60));
 
+      // Face swap to preserve identity
+      const faceSwapResult = await falRun('fal-ai/face-swap', {
+        base_image_url: generatedUrl,
+        swap_image_url: original_photo_url,
+      });
+      finalUrl = faceSwapResult?.image?.url;
+      if (!finalUrl) throw new Error(`No image from face swap: ${JSON.stringify(faceSwapResult)}`);
+
+    } else {
+      // Multiple people (couples / group): 
+      // Step 1: Generate era scene from the first/main photo
+      const result = await falQueue('fal-ai/flux-pro/v1.1-ultra', {
+        image_url: original_photo_url,
+        prompt: prompt,
+        image_prompt_strength: 0.15,
+        num_images: 1,
+        output_format: 'jpeg',
+      });
+
+      console.log('Multi ultra result:', JSON.stringify(result).slice(0, 200));
+      const generatedUrl = result?.images?.[0]?.url;
+      if (!generatedUrl) throw new Error(`No image from flux-pro ultra (multi): ${JSON.stringify(result)}`);
+
+      // Step 2: Swap the main person's face
+      const faceSwap1 = await falRun('fal-ai/face-swap', {
+        base_image_url: generatedUrl,
+        swap_image_url: original_photo_url,
+      });
+      let currentUrl = faceSwap1?.image?.url;
+      if (!currentUrl) throw new Error(`No image from face swap 1: ${JSON.stringify(faceSwap1)}`);
+
+      // Step 3: For each extra photo, swap the next face in
+      for (let i = 0; i < extra_photo_urls.length; i++) {
+        console.log(`Swapping extra face ${i + 1}`);
+        const swap = await falRun('fal-ai/face-swap', {
+          base_image_url: currentUrl,
+          swap_image_url: extra_photo_urls[i],
+        });
+        const swapped = swap?.image?.url;
+        if (!swapped) {
+          console.warn(`Face swap ${i + 1} failed, keeping previous:`, JSON.stringify(swap));
+        } else {
+          currentUrl = swapped;
+        }
+      }
+      finalUrl = currentUrl;
+    }
+
+    console.log('Final URL:', finalUrl.slice(0, 60));
     return Response.json({ url: finalUrl });
+
   } catch (error) {
     console.error('transformPhoto error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
