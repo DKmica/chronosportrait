@@ -181,14 +181,16 @@ export default function Home() {
       status: 'processing',
     });
 
-    const result = await base44.integrations.Core.GenerateImage({
+    const result = await base44.functions.invoke('transformPhoto', {
       prompt: finalPrompt,
-      existing_image_urls: [file_url, ...extraUrls],
-      model: 'gemini_3_1_pro',
+      original_photo_url: file_url,
+      extra_photo_urls: extraUrls,
     });
+    const resultData = result.data;
+    if (resultData.error) throw new Error(resultData.error);
 
     await base44.entities.Transformation.update(transformation.id, {
-      transformed_photo_url: result.url,
+      transformed_photo_url: resultData.url,
       status: 'completed',
     });
 
@@ -200,7 +202,7 @@ export default function Home() {
       setRemaining(getRemainingToday(updated));
     }
 
-    const completedTransformation = { ...transformation, transformed_photo_url: result.url, era_label: isCustom ? customDescription.slice(0, 40) : baseEra.label };
+    const completedTransformation = { ...transformation, transformed_photo_url: resultData.url, era_label: isCustom ? customDescription.slice(0, 40) : baseEra.label };
     setLastTransformation(completedTransformation);
     setIsTransforming(false);
     setPostGenModalOpen(true);
