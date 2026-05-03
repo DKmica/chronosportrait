@@ -5,7 +5,6 @@ import { Sparkles, ArrowRight, Clock, Zap, Package } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import PhotoUploader from '@/components/transform/PhotoUploader';
-import GroupPhotoUploader from '@/components/transform/GroupPhotoUploader';
 import EraCard from '@/components/transform/EraCard';
 import CustomEraCard from '@/components/transform/CustomEraCard';
 import SpecialModeBar from '@/components/transform/SpecialModeBar';
@@ -28,7 +27,7 @@ export default function Home() {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photo2, setPhoto2] = useState(null);
   const [photoPreview2, setPhotoPreview2] = useState(null);
-  const [groupPhotos, setGroupPhotos] = useState([]); // [{file, preview}]
+
 
   // Selection
   const [selectedEra, setSelectedEra] = useState(null);
@@ -93,19 +92,11 @@ export default function Home() {
   };
   const handleClearPhoto2 = () => { setPhoto2(null); setPhotoPreview2(null); };
 
-  const handleGroupAdd = (file, preview) => {
-    setGroupPhotos((prev) => [...prev, { file, preview }]);
-  };
-  const handleGroupRemove = (index) => {
-    setGroupPhotos((prev) => prev.filter((_, i) => i !== index));
-  };
-
   const handleModeSelect = (modeId) => {
     const isSame = selectedMode === modeId;
     if (isSame) {
       setSelectedMode(null);
       setSelectedEra(null);
-      setGroupPhotos([]);
       return;
     }
 
@@ -124,7 +115,6 @@ export default function Home() {
     setSelectedMode(modeId);
     setSelectedEra(null);
     if (modeId !== 'couples') { setPhoto2(null); setPhotoPreview2(null); }
-    if (modeId !== 'group') { setGroupPhotos([]); }
   };
 
   const handleAdUnlocked = () => {
@@ -166,13 +156,6 @@ export default function Home() {
     if (selectedMode === 'couples' && photo2) {
       const { file_url: url2 } = await base44.integrations.Core.UploadFile({ file: photo2 });
       extraUrls.push(url2);
-    }
-
-    if (selectedMode === 'group' && groupPhotos.length > 0) {
-      for (const gp of groupPhotos) {
-        const { file_url: gUrl } = await base44.integrations.Core.UploadFile({ file: gp.file });
-        extraUrls.push(gUrl);
-      }
     }
 
     transformation = await base44.entities.Transformation.create({
@@ -224,13 +207,11 @@ export default function Home() {
     ? ERAS.filter((e) => activeMode.eraIds.includes(e.id))
     : ERAS;
 
-  const isGroup = selectedMode === 'group';
   const isCouples = selectedMode === 'couples';
 
   const canTransform = photo && selectedEra && !isTransforming && remaining > 0 &&
     !(selectedEra === 'custom' && !customDescription.trim()) &&
-    !(isCouples && !photo2) &&
-    !(isGroup && groupPhotos.length === 0);
+    !(isCouples && !photo2);
 
   return (
     <div className="min-h-screen">
@@ -322,17 +303,6 @@ export default function Home() {
             <div className="flex-1">
               <p className="text-xs text-muted-foreground text-center mb-2 font-medium">Person 2</p>
               <PhotoUploader photoPreview={photoPreview2} onPhotoSelect={handlePhotoSelect2} onClear={handleClearPhoto2} />
-            </div>
-          </div>
-        ) : isGroup ? (
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs text-muted-foreground mb-2 font-medium">Main photo (you or anyone in the group)</p>
-              <PhotoUploader photoPreview={photoPreview} onPhotoSelect={handlePhotoSelect} onClear={handleClearPhoto} />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground mb-2 font-medium">Add more people</p>
-              <GroupPhotoUploader photos={groupPhotos} onAdd={handleGroupAdd} onRemove={handleGroupRemove} />
             </div>
           </div>
         ) : (

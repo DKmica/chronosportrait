@@ -1,58 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const FAL_KEY = Deno.env.get('FAL_API_KEY');
-
-async function falPost(url, bodyObj) {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Key ${FAL_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(bodyObj),
-  });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`Fal error [${url}]: ${text}`);
-  return JSON.parse(text);
-}
-
-async function falGet(url) {
-  const res = await fetch(url, {
-    headers: { 'Authorization': `Key ${FAL_KEY}` },
-  });
-  const text = await res.text();
-  if (!res.ok) throw new Error(`Fal GET error [${url}]: ${text}`);
-  return JSON.parse(text);
-}
-
-async function falQueue(endpoint, bodyObj) {
-  console.log('Submitting to queue:', endpoint);
-  const submit = await falPost(`https://queue.fal.run/${endpoint}`, bodyObj);
-  const requestId = submit.request_id;
-  if (!requestId) throw new Error(`No request_id from queue submit: ${JSON.stringify(submit)}`);
-
-  const statusUrl = submit.status_url || `https://queue.fal.run/requests/${requestId}/status`;
-  const responseUrl = submit.response_url || `https://queue.fal.run/requests/${requestId}`;
-
-  for (let i = 0; i < 60; i++) {
-    await new Promise(r => setTimeout(r, 3000));
-    const status = await falGet(statusUrl);
-    console.log(`Queue status [${i}]:`, status.status);
-    if (status.status === 'COMPLETED') {
-      return falGet(responseUrl);
-    }
-    if (status.status === 'FAILED') {
-      throw new Error(`Queue job failed: ${JSON.stringify(status)}`);
-    }
-  }
-  throw new Error('Queue job timed out');
-}
-
-async function falRun(endpoint, bodyObj) {
-  console.log('Running direct:', endpoint);
-  return falPost(`https://fal.run/${endpoint}`, bodyObj);
-}
-
 Deno.serve(async (req) => {
   console.log('transformPhoto invoked');
   try {
@@ -61,7 +8,6 @@ Deno.serve(async (req) => {
     let body = {};
     try {
       const text = await req.text();
-      console.log('Raw body length:', text.length);
       if (text) body = JSON.parse(text);
     } catch (e) {
       console.log('Body parse error:', e.message);
@@ -75,74 +21,48 @@ Deno.serve(async (req) => {
 
     if (!original_photo_url) return Response.json({ error: 'original_photo_url is required' }, { status: 400 });
 
-    const allPhotos = [original_photo_url, ...extra_photo_urls];
-    console.log('Total photos:', allPhotos.length);
+    // Build file_urls array — main photo + any extra photos
+    const fileUrls = [original_photo_url, ...extra_photo_urls];
 
-    let finalUrl;
+    // Use Gemini via InvokeLLM to generate the transformed portrait
+    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      model: 'gemini_3_1_pro',
+      prompt: `You are an expert portrait artist. You will receive reference photo(s) of real people. 
+Your task: Generate a high-quality AI portrait image of the person(s) transformed into the described era/style.
 
-    if (allPhotos.length === 1) {
-      // Single person: use flux-pro image-to-image (img2img) so the prompt is actually applied
-      // strength controls how much the prompt overrides the original (0=keep original, 1=ignore original)
-      const result = await falQueue('fal-ai/flux-pro/v1.1-ultra', {
-        image_url: original_photo_url,
-        prompt: prompt,
-        image_prompt_strength: 0.15, // 0.15 = heavily guided by text prompt, keeps face loosely
-        num_images: 1,
-        output_format: 'jpeg',
-      });
+CRITICAL RULES:
+- Preserve the exact facial features, skin tone, bone structure, and likeness of each person from the reference photos
+- Only change: clothing, hairstyle, background, lighting, and era-appropriate props/setting
+- Do NOT alter face shape, eye color, or any identifying features
+- Output a single cohesive portrait image
 
-      console.log('Ultra result:', JSON.stringify(result).slice(0, 200));
-      const generatedUrl = result?.images?.[0]?.url;
-      if (!generatedUrl) throw new Error(`No image from flux-pro ultra: ${JSON.stringify(result)}`);
-      console.log('Generated url:', generatedUrl.slice(0, 60));
-
-      // Face swap to preserve identity
-      const faceSwapResult = await falRun('fal-ai/face-swap', {
-        base_image_url: generatedUrl,
-        swap_image_url: original_photo_url,
-      });
-      finalUrl = faceSwapResult?.image?.url;
-      if (!finalUrl) throw new Error(`No image from face swap: ${JSON.stringify(faceSwapResult)}`);
-
-    } else {
-      // Multiple people (couples / group): 
-      // Step 1: Generate era scene from the first/main photo
-      const result = await falQueue('fal-ai/flux-pro/v1.1-ultra', {
-        image_url: original_photo_url,
-        prompt: prompt,
-        image_prompt_strength: 0.15,
-        num_images: 1,
-        output_format: 'jpeg',
-      });
-
-      console.log('Multi ultra result:', JSON.stringify(result).slice(0, 200));
-      const generatedUrl = result?.images?.[0]?.url;
-      if (!generatedUrl) throw new Error(`No image from flux-pro ultra (multi): ${JSON.stringify(result)}`);
-
-      // Step 2: Swap the main person's face
-      const faceSwap1 = await falRun('fal-ai/face-swap', {
-        base_image_url: generatedUrl,
-        swap_image_url: original_photo_url,
-      });
-      let currentUrl = faceSwap1?.image?.url;
-      if (!currentUrl) throw new Error(`No image from face swap 1: ${JSON.stringify(faceSwap1)}`);
-
-      // Step 3: For each extra photo, swap the next face in
-      for (let i = 0; i < extra_photo_urls.length; i++) {
-        console.log(`Swapping extra face ${i + 1}`);
-        const swap = await falRun('fal-ai/face-swap', {
-          base_image_url: currentUrl,
-          swap_image_url: extra_photo_urls[i],
-        });
-        const swapped = swap?.image?.url;
-        if (!swapped) {
-          console.warn(`Face swap ${i + 1} failed, keeping previous:`, JSON.stringify(swap));
-        } else {
-          currentUrl = swapped;
+${prompt}`,
+      file_urls: fileUrls,
+      response_json_schema: {
+        type: 'object',
+        properties: {
+          image_prompt: {
+            type: 'string',
+            description: 'A highly detailed image generation prompt describing the transformed portrait, including all visual details of clothing, background, lighting, and style while describing the person\'s appearance from the reference photos'
+          }
         }
       }
-      finalUrl = currentUrl;
+    });
+
+    console.log('Gemini image_prompt length:', result?.image_prompt?.length);
+
+    if (!result?.image_prompt) {
+      throw new Error('Gemini did not return an image prompt');
     }
+
+    // Now generate the actual image using Gemini image generation
+    const imageResult = await base44.asServiceRole.integrations.Core.GenerateImage({
+      prompt: result.image_prompt,
+      existing_image_urls: fileUrls,
+    });
+
+    const finalUrl = imageResult?.url;
+    if (!finalUrl) throw new Error(`No image URL from GenerateImage: ${JSON.stringify(imageResult)}`);
 
     console.log('Final URL:', finalUrl.slice(0, 60));
     return Response.json({ url: finalUrl });

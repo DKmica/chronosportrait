@@ -1,17 +1,7 @@
 // Modes that require watching an ad (free tier) or pro plan
-export const AD_GATED_MODES = ['couples', 'group'];
+export const AD_GATED_MODES = ['couples'];
 
 export const SPECIAL_MODES = [
-  {
-    id: 'group',
-    label: 'Group',
-    emoji: '👥',
-    description: 'Transform a group photo',
-    promptPrefix: 'Multiple reference photos are provided — one per person. Each person in the output must have the EXACT face from their corresponding reference photo. Show all of them together in one cohesive cinematic scene with era-appropriate costumes. ',
-    eraIds: null,
-    isPro: false,
-    isGroup: true,
-  },
   {
     id: 'couples',
     label: 'Couples',
