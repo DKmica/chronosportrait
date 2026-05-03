@@ -137,6 +137,8 @@ export default function Home() {
     if (remaining <= 0) return;
 
     setIsTransforming(true);
+    let transformation = null;
+    try {
     const isCustom = selectedEra === 'custom';
     const mode = SPECIAL_MODES.find((m) => m.id === selectedMode);
     const baseEra = isCustom
@@ -173,7 +175,7 @@ export default function Home() {
       }
     }
 
-    const transformation = await base44.entities.Transformation.create({
+    transformation = await base44.entities.Transformation.create({
       original_photo_url: file_url,
       extra_photo_urls: extraUrls.length > 0 ? extraUrls : [],
       era: baseEra.id,
@@ -204,9 +206,16 @@ export default function Home() {
 
     const completedTransformation = { ...transformation, transformed_photo_url: resultData.url, era_label: isCustom ? customDescription.slice(0, 40) : baseEra.label };
     setLastTransformation(completedTransformation);
-    setIsTransforming(false);
     setPostGenModalOpen(true);
     setTimeout(() => navigate(`/result/${transformation.id}`), 100);
+    } catch (err) {
+      console.error('Transform failed:', err);
+      if (transformation) {
+        await base44.entities.Transformation.update(transformation.id, { status: 'failed' });
+      }
+    } finally {
+      setIsTransforming(false);
+    }
   };
 
   const activeEra = ERAS.find((e) => e.id === selectedEra);
