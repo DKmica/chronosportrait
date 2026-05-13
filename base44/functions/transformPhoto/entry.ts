@@ -27,13 +27,19 @@ async function falRun(endpointId, input) {
     const statusRes = await fetch(statusUrl, {
       headers: { 'Authorization': `Key ${FAL_KEY}` },
     });
-    const status = await statusRes.json();
-    console.log(`fal [${endpointId}] status:`, status.status);
+    const statusText = await statusRes.text();
+    let status;
+    try { status = JSON.parse(statusText); } catch(_) { status = {}; }
+    console.log(`fal [${endpointId}] status:`, status.status, status.error || '');
     if (status.status === 'COMPLETED') {
+      await new Promise(r => setTimeout(r, 1000));
       const resultRes = await fetch(resultUrl, {
         headers: { 'Authorization': `Key ${FAL_KEY}` },
       });
-      return resultRes.json();
+      const text = await resultRes.text();
+      console.log(`fal [${endpointId}] result (first 200):`, text.slice(0, 200));
+      if (!text) throw new Error(`Empty result body from ${endpointId}`);
+      return JSON.parse(text);
     }
     if (status.status === 'FAILED') {
       throw new Error(`fal job failed [${endpointId}]: ${JSON.stringify(status)}`);
@@ -42,9 +48,37 @@ async function falRun(endpointId, input) {
   throw new Error(`fal job timed out [${endpointId}]`);
 }
 
+// Direct synchronous call for endpoints that don't use the queue
+async function falRunDirect(endpointId, input) {
+  console.log(`fal [${endpointId}] direct call...`);
+  const res = await fetch(`https://fal.run/${endpointId}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Key ${FAL_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  });
+  const text = await res.text();
+  console.log(`fal [${endpointId}] direct result (first 200):`, text.slice(0, 200));
+  if (!res.ok) throw new Error(`fal direct error (${endpointId}) ${res.status}: ${text.slice(0, 300)}`);
+  if (!text) throw new Error(`Empty direct result from ${endpointId}`);
+  return JSON.parse(text);
+}
+
 function extractUrl(result) {
   return result?.images?.[0]?.url || result?.image?.url || null;
 }
+
+const PULID_PARAMS = {
+  num_images: 1,
+  num_inference_steps: 4,
+  guidance_scale: 1.2,
+  id_scale: 0.9,
+  mode: 'fidelity',
+  image_size: { width: 768, height: 1024 },
+  negative_prompt: 'blurry, low resolution, bad anatomy, deformed face, cartoon, painting, different person, wrong person, ugly, distorted',
+};
 
 Deno.serve(async (req) => {
   console.log('transformPhoto invoked');
@@ -68,57 +102,55 @@ Deno.serve(async (req) => {
 
     const isMultiPerson = extra_photo_urls.length > 0;
 
-    // ── STEP 1: Generate person 1 in-era using PuLID (face identity preserved) ──
-    console.log('Running PuLID for person 1...');
-    const pulidResult = await falRun('fal-ai/pulid', {
-      reference_images: [{ image_url: original_photo_url }],
-      prompt: `${prompt}, photorealistic, ultra detailed, 8K resolution`,
-      negative_prompt: 'blurry, low resolution, bad anatomy, deformed face, cartoon, painting, different person, wrong person, ugly, distorted',
-      num_images: 1,
-      num_inference_steps: 4,
-      guidance_scale: 1.2,
-      id_scale: 0.9,
-      mode: 'fidelity',
-      image_size: { width: 768, height: 1024 },
-    });
-
-    const person1Url = extractUrl(pulidResult);
-    if (!person1Url) throw new Error(`No URL from PuLID: ${JSON.stringify(pulidResult).slice(0, 200)}`);
-    console.log('Person 1 done:', person1Url.slice(0, 60));
-
     if (!isMultiPerson) {
-      return Response.json({ url: person1Url });
+      // ── SOLO: Single PuLID pass ──────────────────────────────────────────────
+      console.log('Running PuLID solo...');
+      const result = await falRun('fal-ai/pulid', {
+        ...PULID_PARAMS,
+        reference_images: [{ image_url: original_photo_url }],
+        prompt: `${prompt}, photorealistic, ultra detailed, 8K resolution`,
+      });
+      const url = extractUrl(result);
+      if (!url) throw new Error(`No URL from PuLID: ${JSON.stringify(result).slice(0, 200)}`);
+      console.log('Solo done:', url.slice(0, 60));
+      return Response.json({ url });
     }
 
-    // ── STEP 2 (couples): Describe person 2's face, then use FLUX Kontext ────────
-    // to add them into the scene while keeping person 1 intact
-    console.log('Describing person 2 face...');
-    const p2Analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      model: 'gemini_3_1_pro',
-      prompt: `Look at this photo and describe this person's face and appearance in detail. Include: gender, approximate age, skin tone, face shape, eye color, hair color and style, any distinctive features. Be specific and concise — 2-3 sentences max.`,
-      file_urls: [extra_photo_urls[0]],
-      response_json_schema: {
-        type: 'object',
-        properties: { description: { type: 'string' } }
-      }
-    });
-    const person2Desc = p2Analysis?.description || 'a person';
-    console.log('Person 2 description:', person2Desc);
+    // ── COUPLES: Run PuLID for each person in parallel, then composite ────────
+    console.log('Running PuLID for both people in parallel...');
 
-    // Use FLUX Kontext to edit the person-1 image and add person 2 beside them
-    console.log('Running FLUX Kontext to add person 2...');
-    const kontextResult = await falRun('fal-ai/flux-kontext', {
-      image_url: person1Url,
-      prompt: `Add a second person standing next to the first person. The second person looks like this: ${person2Desc}. They are dressed in matching era-appropriate clothing that fits the scene. Keep everything else — the background, setting, lighting, and the first person — exactly the same. Both people look photorealistic and natural together.`,
-      num_inference_steps: 30,
-      guidance_scale: 2.5,
+    // Extract the era description from the prompt for the composite step
+    // The prompt already contains era details — use it directly for each person
+    const [p1Result, p2Result] = await Promise.all([
+      falRun('fal-ai/pulid', {
+        ...PULID_PARAMS,
+        reference_images: [{ image_url: original_photo_url }],
+        prompt: `portrait of a person, ${prompt}, photorealistic, ultra detailed`,
+      }),
+      falRun('fal-ai/pulid', {
+        ...PULID_PARAMS,
+        reference_images: [{ image_url: extra_photo_urls[0] }],
+        prompt: `portrait of a person, ${prompt}, photorealistic, ultra detailed`,
+      }),
+    ]);
+
+    const person1Url = extractUrl(p1Result);
+    const person2Url = extractUrl(p2Result);
+    if (!person1Url) throw new Error(`No URL from PuLID person 1: ${JSON.stringify(p1Result).slice(0, 200)}`);
+    if (!person2Url) throw new Error(`No URL from PuLID person 2: ${JSON.stringify(p2Result).slice(0, 200)}`);
+    console.log('Both portraits done. Compositing...');
+
+    // Use FLUX Kontext Multi to place both people together in the same scene
+    const kontextResult = await falRunDirect('fal-ai/flux-pro/kontext/multi', {
+      image_urls: [person1Url, person2Url],
+      prompt: `Take the person from the first image and the person from the second image and place them together side by side in a single scene. ${prompt}. Both people must retain their exact facial features, skin tone, and identity from their reference images. They are standing together, looking natural and comfortable. The scene is cohesive, photorealistic, and era-appropriate.`,
+      guidance_scale: 3.5,
       num_images: 1,
       output_format: 'jpeg',
-      resolution_mode: 'match_input',
     });
 
     const finalUrl = extractUrl(kontextResult);
-    if (!finalUrl) throw new Error(`No URL from Kontext: ${JSON.stringify(kontextResult).slice(0, 200)}`);
+    if (!finalUrl) throw new Error(`No URL from Kontext Multi: ${JSON.stringify(kontextResult).slice(0, 200)}`);
     console.log('Couples done:', finalUrl.slice(0, 60));
 
     return Response.json({ url: finalUrl });
