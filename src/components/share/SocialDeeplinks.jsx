@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Instagram, Music, Download, Loader2 } from 'lucide-react';
+import { Instagram, Music, Download, Loader2, Facebook } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 
@@ -82,6 +82,17 @@ export default function SocialDeeplinks({ transformation }) {
     window.open(tiktokUrl, '_blank');
   };
 
+  const openFacebook = () => {
+    if (!watermarkedUrl) {
+      generateWatermarkedImage();
+      return;
+    }
+    
+    // Facebook share dialog
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(watermarkedUrl)}&quote=${encodeURIComponent(`✨ Check me out in the ${transformation.era_label} era on Chronos Booth!`)}`;
+    window.open(facebookUrl, '_blank', 'width=600,height=400');
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -117,6 +128,19 @@ export default function SocialDeeplinks({ transformation }) {
             <Music className="w-4 h-4" />
           )}
           {generating ? 'Generating...' : 'TikTok'}
+        </Button>
+
+        <Button
+          onClick={openFacebook}
+          disabled={generating}
+          className="w-full h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white gap-2 disabled:opacity-50"
+        >
+          {generating ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Facebook className="w-4 h-4" />
+          )}
+          {generating ? 'Generating...' : 'Facebook'}
         </Button>
 
         {watermarkedUrl && (
