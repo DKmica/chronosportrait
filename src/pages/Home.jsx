@@ -225,7 +225,7 @@ export default function Home() {
       <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-2">
         <div className="flex items-center justify-between mb-1">
           <div>
-            <h1 className="font-display text-2xl font-bold text-foreground leading-tight">Time Frame Shift</h1>
+            <h1 className="font-display text-2xl font-bold text-foreground leading-tight">Chronos Booth</h1>
             <p className="text-muted-foreground text-xs">Step into another era</p>
           </div>
           <button onClick={() => navigate('/find-timeline')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/15 border border-primary/30 text-primary text-xs font-semibold">
