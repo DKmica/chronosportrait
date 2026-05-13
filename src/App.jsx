@@ -6,14 +6,14 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import AppLayout from '@/components/layout/AppLayout';
-import Home from '@/pages/Home';
-import Result from '@/pages/Result';
-import Gallery from '@/pages/Gallery';
+import Home from '@/pages/Home.jsx';
+import Result from '@/pages/Result.jsx';
+import Gallery from '@/pages/Gallery.jsx';
 import Community from '@/pages/Community';
 import Settings from '@/pages/Settings';
 import Onboarding from '@/pages/Onboarding';
 import FindTimeline from '@/pages/FindTimeline';
-import EraPack from '@/pages/EraPack';
+import EraPack from '@/pages/EraPack.jsx';
 import Legal from '@/pages/Legal';
 
 const AuthenticatedApp = () => {

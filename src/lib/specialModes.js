@@ -1,13 +1,13 @@
 // Modes that require watching an ad (free tier) or pro plan
-export const AD_GATED_MODES = ['couples'];
+export const AD_GATED_MODES = ['partners'];
 
 export const SPECIAL_MODES = [
   {
-    id: 'couples',
-    label: 'Couples',
-    emoji: '💑',
-    description: 'For two people together',
-    promptPrefix: 'Two reference photos are provided — one per person. Each person in the output must have the EXACT face from their corresponding reference photo. Show both together, side by side, romantic and cinematic, with era-appropriate costumes. ',
+    id: 'partners',
+    label: 'Couples & Partners',
+    emoji: '🤝',
+    description: 'Two people together — partners, friends, siblings, or any pairing',
+    promptPrefix: '', // handled by buildPartnersPrompt
     eraIds: null,
   },
   {
@@ -34,4 +34,27 @@ export const SPECIAL_MODES = [
     promptPrefix: 'This is a birthday portrait. Add festive, celebratory elements appropriate to the era — banners, confetti, candles, or period-appropriate decorations. Make it feel like a celebration. ',
     eraIds: null,
   },
+];
+
+// Relationship vibe options for partners mode
+export const RELATIONSHIP_VIBES = [
+  { id: 'partners', label: 'Partners', emoji: '🤝' },
+  { id: 'spouses', label: 'Spouses', emoji: '💍' },
+  { id: 'dating', label: 'Dating', emoji: '💕' },
+  { id: 'best_friends', label: 'Best Friends', emoji: '👫' },
+  { id: 'siblings', label: 'Siblings', emoji: '👨‍👩‍👦' },
+  { id: 'custom', label: 'Custom', emoji: '✏️' },
+];
+
+// Style options for each person in partners mode
+export const PARTNER_STYLES = [
+  { id: 'royal', label: 'Royal', emoji: '👑' },
+  { id: 'warrior', label: 'Warrior', emoji: '⚔️' },
+  { id: 'noble', label: 'Noble', emoji: '🎩' },
+  { id: 'explorer', label: 'Explorer', emoji: '🗺️' },
+  { id: 'rebel', label: 'Rebel', emoji: '🔥' },
+  { id: 'mystic', label: 'Mystic', emoji: '🔮' },
+  { id: 'scientist', label: 'Scientist', emoji: '🔬' },
+  { id: 'artist', label: 'Artist', emoji: '🎨' },
+  { id: 'custom', label: 'Custom', emoji: '✏️' },
 ];
