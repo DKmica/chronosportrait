@@ -284,7 +284,7 @@ export default function Home() {
                 key={era.id}
                 era={era}
                 isSelected={selectedEra?.id === era.id}
-                onSelect={() => setSelectedEra(era)}
+                onClick={() => setSelectedEra(era)}
                 index={i}
               />
             ))}
