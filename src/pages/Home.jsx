@@ -36,6 +36,7 @@ export default function Home() {
   const [photoPreviewB, setPhotoPreviewB] = useState(null);
   const [photoUrlB, setPhotoUrlB] = useState(null);
   const [relationshipVibe, setRelationshipVibe] = useState('partners');
+  const [customRelationshipVibe, setCustomRelationshipVibe] = useState('');
   const [styleA, setStyleA] = useState('default');
   const [customStyleA, setCustomStyleA] = useState('');
   const [styleB, setStyleB] = useState('default');
@@ -162,9 +163,10 @@ export default function Home() {
 
       let finalPrompt;
       if (isPartnersMode) {
+        const resolvedVibe = relationshipVibe === 'custom' ? (customRelationshipVibe || 'partners') : relationshipVibe;
         finalPrompt = buildPartnersPrompt({
           eraPrompt,
-          relationshipVibe,
+          relationshipVibe: resolvedVibe,
           styleA: styleA === 'custom' ? '' : styleA,
           styleB: styleB === 'custom' ? '' : styleB,
           customStyleA: styleA === 'custom' ? customStyleA : '',
@@ -250,6 +252,7 @@ export default function Home() {
             photoPreviewA={photoPreviewA} onPhotoSelectA={handlePhotoSelectA} onClearA={() => { setPhotoA(null); setPhotoPreviewA(null); setPhotoUrlA(null); }}
             photoPreviewB={photoPreviewB} onPhotoSelectB={handlePhotoSelectB} onClearB={() => { setPhotoB(null); setPhotoPreviewB(null); setPhotoUrlB(null); }}
             relationshipVibe={relationshipVibe} onRelationshipVibeChange={setRelationshipVibe}
+            customRelationshipVibe={customRelationshipVibe} onCustomRelationshipVibeChange={setCustomRelationshipVibe}
             styleA={styleA} onStyleAChange={setStyleA} customStyleA={customStyleA} onCustomStyleAChange={setCustomStyleA}
             styleB={styleB} onStyleBChange={setStyleB} customStyleB={customStyleB} onCustomStyleBChange={setCustomStyleB}
           />

@@ -7,6 +7,7 @@ export default function PartnersConfig({
   photoPreviewA, onPhotoSelectA, onClearA,
   photoPreviewB, onPhotoSelectB, onClearB,
   relationshipVibe, onRelationshipVibeChange,
+  customRelationshipVibe, onCustomRelationshipVibeChange,
   styleA, onStyleAChange, customStyleA, onCustomStyleAChange,
   styleB, onStyleBChange, customStyleB, onCustomStyleBChange,
 }) {
@@ -42,6 +43,17 @@ export default function PartnersConfig({
             </button>
           ))}
         </div>
+        {relationshipVibe === 'custom' && (
+          <motion.input
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            type="text"
+            value={customRelationshipVibe}
+            onChange={(e) => onCustomRelationshipVibeChange(e.target.value)}
+            placeholder="e.g. rivals turned allies, mentor and student…"
+            className="mt-2 w-full rounded-xl bg-secondary border border-border text-foreground text-sm placeholder:text-muted-foreground px-4 py-2.5 focus:outline-none focus:ring-1 focus:ring-primary/50"
+          />
+        )}
       </div>
 
       {/* Style per person */}
