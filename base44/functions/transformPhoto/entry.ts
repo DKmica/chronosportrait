@@ -74,7 +74,7 @@ async function falDirect(endpointId, input) {
 
 const PULID_BASE = {
   num_images: 1,
-  num_inference_steps: 4,
+  num_inference_steps: 20,
   guidance_scale: 1.2,
   id_scale: 0.9,
   mode: 'fidelity',
@@ -97,12 +97,32 @@ async function generateSolo(original_photo_url, prompt) {
 
 // ── Partners transformation ────────────────────────────────────────────────
 async function generatePartners(original_photo_url, extra_photo_url, prompt) {
-  console.log('[partners] Running Flux Kontext Multi directly with both reference photos...');
+  console.log('[partners] Running PuLID for both people in parallel...');
 
-  // Feed both original photos directly into Kontext Multi — no intermediate PuLID step needed
+  // Step 1: Generate each person individually with PuLID (identity-preserving model)
+  const [p1Result, p2Result] = await Promise.all([
+    falQueue('fal-ai/pulid', {
+      ...PULID_BASE,
+      reference_images: [{ image_url: original_photo_url }],
+      prompt: `${prompt}, photorealistic, ultra detailed, 8K resolution, sharp focus`,
+    }),
+    falQueue('fal-ai/pulid', {
+      ...PULID_BASE,
+      reference_images: [{ image_url: extra_photo_url }],
+      prompt: `${prompt}, photorealistic, ultra detailed, 8K resolution, sharp focus`,
+    }),
+  ]);
+
+  const person1Url = extractUrl(p1Result);
+  const person2Url = extractUrl(p2Result);
+  if (!person1Url) throw new Error(`No URL from PuLID person A: ${JSON.stringify(p1Result).slice(0, 200)}`);
+  if (!person2Url) throw new Error(`No URL from PuLID person B: ${JSON.stringify(p2Result).slice(0, 200)}`);
+  console.log('[partners] Both portraits done. Compositing with Kontext...');
+
+  // Step 2: Use Kontext Multi to place both identity-preserved portraits into one scene
   const kontextResult = await falQueue('fal-ai/flux-pro/kontext/multi', {
-    image_urls: [original_photo_url, extra_photo_url],
-    prompt: `Take the exact face of the person from the first reference image and the exact face of the person from the second reference image. Place both of them together side by side in a single cohesive scene. ${prompt}. Preserve each person's exact facial features, skin tone, bone structure, and identity with maximum fidelity. They are two distinct individuals standing together naturally. The scene is photorealistic and era-appropriate. Do not merge faces. Do not alter either person's face or identity.`,
+    image_urls: [person1Url, person2Url],
+    prompt: `Combine these two portraits into a single cohesive scene. Place both people side by side together. Keep each person's face, skin tone, and identity exactly as shown in their respective input images — do not alter any facial features. ${prompt}. The result should be one unified photorealistic image with both people clearly visible and distinct.`,
     guidance_scale: 3.5,
     num_images: 1,
     output_format: 'jpeg',
