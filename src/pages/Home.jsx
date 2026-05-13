@@ -165,9 +165,11 @@ export default function Home() {
         finalPrompt = buildPartnersPrompt({
           eraPrompt,
           relationshipVibe,
-          styleA: styleA === 'custom' ? customStyleA : styleA,
-          styleB: styleB === 'custom' ? customStyleB : styleB,
-          extraStyle: stylePrompt,
+          styleA: styleA === 'custom' ? '' : styleA,
+          styleB: styleB === 'custom' ? '' : styleB,
+          customStyleA: styleA === 'custom' ? customStyleA : '',
+          customStyleB: styleB === 'custom' ? customStyleB : '',
+          styleSuffix: stylePrompt,
         });
       } else {
         finalPrompt = buildFaceSwapPrompt(eraPrompt, stylePrompt);
