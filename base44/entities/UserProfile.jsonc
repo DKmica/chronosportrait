@@ -1,0 +1,100 @@
+{
+  "name": "UserProfile",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user"
+    },
+    "plan": {
+      "type": "string",
+      "enum": [
+        "free",
+        "pro_monthly",
+        "pro_yearly"
+      ],
+      "default": "free",
+      "description": "Current subscription plan"
+    },
+    "transformations_today": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of transformations done today"
+    },
+    "last_transform_date": {
+      "type": "string",
+      "description": "ISO date of last transformation"
+    },
+    "streak_days": {
+      "type": "number",
+      "default": 0,
+      "description": "Current daily usage streak"
+    },
+    "last_streak_date": {
+      "type": "string",
+      "description": "ISO date for streak tracking"
+    },
+    "referral_code": {
+      "type": "string",
+      "description": "Unique referral code for this user"
+    },
+    "referred_by": {
+      "type": "string",
+      "description": "Referral code used when signing up"
+    },
+    "bonus_transformations": {
+      "type": "number",
+      "default": 0,
+      "description": "Extra free transformations earned via referrals"
+    },
+    "total_transformations": {
+      "type": "number",
+      "default": 0,
+      "description": "All-time total transformations"
+    }
+  },
+  "required": [
+    "user_email"
+  ],
+  "rls": {
+    "create": {
+      "data.user_email": "{{user.email}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "data.user_email": "{{user.email}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
