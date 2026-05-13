@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -10,6 +10,7 @@ import ShareToCommunityButton from '@/components/community/ShareToCommmunityButt
 import BeforeAfterSlider from '@/components/result/BeforeAfterSlider';
 import ViralShareCard from '@/components/share/ViralShareCard';
 import SocialDeeplinks from '@/components/share/SocialDeeplinks';
+import { showInterstitialAd } from '@/lib/admob';
 
 export default function Result() {
   const { id } = useParams();
@@ -27,6 +28,13 @@ export default function Result() {
   });
 
   const t = liveTransformation || transformation;
+
+  // Show interstitial ad when transformation result is displayed
+  useEffect(() => {
+    if (t?.status === 'completed') {
+      showInterstitialAd().catch(() => {});
+    }
+  }, [t?.id, t?.status]);
 
   if (isLoading || !t) {
     return (
