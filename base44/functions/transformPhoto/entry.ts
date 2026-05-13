@@ -74,7 +74,7 @@ async function falDirect(endpointId, input) {
 
 const PULID_BASE = {
   num_images: 1,
-  num_inference_steps: 20,
+  num_inference_steps: 12,
   guidance_scale: 1.2,
   id_scale: 0.9,
   mode: 'fidelity',
