@@ -15,6 +15,7 @@ import Onboarding from '@/pages/Onboarding';
 import FindTimeline from '@/pages/FindTimeline';
 import EraPack from '@/pages/EraPack.jsx';
 import Legal from '@/pages/Legal';
+import MyCollection from '@/pages/MyCollection';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -47,6 +48,7 @@ const AuthenticatedApp = () => {
         <Route path="/" element={<Home />} />
         <Route path="/gallery" element={<Gallery />} />
         <Route path="/community" element={<Community />} />
+        <Route path="/my-collection" element={<MyCollection />} />
         <Route path="/result/:id" element={<Result />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/find-timeline" element={<FindTimeline />} />
