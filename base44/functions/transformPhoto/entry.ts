@@ -120,7 +120,7 @@ async function generatePartners(original_photo_url, extra_photo_url, prompt) {
   console.log('[partners] Both portraits done. Compositing with Kontext...');
 
   // Step 2: Use Kontext Multi to place both identity-preserved portraits into one scene
-  const kontextResult = await falQueue('fal-ai/flux-pro/kontext/multi', {
+  const kontextResult = await falDirect('fal-ai/flux-pro/kontext/multi', {
     image_urls: [person1Url, person2Url],
     prompt: `Combine these two portraits into a single cohesive scene. Place both people side by side together. Keep each person's face, skin tone, and identity exactly as shown in their respective input images — do not alter any facial features. ${prompt}. The result should be one unified photorealistic image with both people clearly visible and distinct.`,
     guidance_scale: 3.5,
