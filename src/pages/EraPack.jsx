@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import PhotoUploader from '@/components/transform/PhotoUploader';
-import { buildSoloPrompt } from '@/lib/faceSwapPrompt';
+import { buildFaceSwapPrompt } from '@/lib/faceSwapPrompt';
 
 const ERA_PACKS = [
   {
@@ -78,7 +78,7 @@ export default function EraPack() {
     for (let i = 0; i < selectedPack.eras.length; i++) {
       setCurrentEraIndex(i);
       const era = selectedPack.eras[i];
-      const prompt = buildSoloPrompt({ eraPrompt: era.prompt, extraStyle: '' });
+      const prompt = buildFaceSwapPrompt(era.prompt, '');
 
       const transformation = await base44.entities.Transformation.create({
         original_photo_url: file_url,

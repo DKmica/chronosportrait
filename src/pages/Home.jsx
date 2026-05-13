@@ -16,7 +16,7 @@ import StyleSelector, { STYLE_PROMPTS } from '@/components/transform/StyleSelect
 import LimitBanner from '@/components/transform/LimitBanner';
 import AdGateModal from '@/components/transform/AdGateModal';
 import { getOrCreateProfile, getRemainingToday, consumeTransformation } from '@/lib/usageLimit';
-import { buildSoloPrompt, buildPartnersPrompt } from '@/lib/faceSwapPrompt';
+import { buildFaceSwapPrompt, buildPartnersPrompt } from '@/lib/faceSwapPrompt';
 
 const FREE_DAILY_LIMIT = 3;
 
@@ -170,7 +170,7 @@ export default function Home() {
           extraStyle: stylePrompt,
         });
       } else {
-        finalPrompt = buildSoloPrompt({ eraPrompt, extraStyle: stylePrompt });
+        finalPrompt = buildFaceSwapPrompt(eraPrompt, stylePrompt);
       }
 
       // Step 3: Create DB record
