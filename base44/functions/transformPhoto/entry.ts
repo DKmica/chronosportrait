@@ -1,149 +1,132 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const FAL_KEY = Deno.env.get('FAL_API_KEY');
+const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+const GEMINI_MODEL = 'gemini-2.5-flash-image';
+const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function extractUrl(result) {
-  if (!result) return null;
-  return (
-    result?.images?.[0]?.url ||
-    result?.image?.url ||
-    result?.url ||
-    result?.data?.images?.[0]?.url ||
-    result?.data?.image?.url ||
-    result?.data?.url ||
-    null
-  );
+// Fetch an image URL and convert to base64
+async function imageUrlToBase64(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch image from URL (${res.status}): ${url.slice(0, 80)}`);
+  const buffer = await res.arrayBuffer();
+  const bytes = new Uint8Array(buffer);
+  let binary = '';
+  for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+  return {
+    base64: btoa(binary),
+    mimeType: res.headers.get('content-type')?.split(';')[0] || 'image/jpeg',
+  };
 }
 
-// Submit to fal queue and poll until done
-async function falQueue(endpointId, input, maxAttempts = 45) {
-  const submitRes = await fetch(`https://queue.fal.run/${endpointId}`, {
+// Call Gemini image generation with multipart content
+async function callGemini(parts) {
+  const res = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
     method: 'POST',
-    headers: { 'Authorization': `Key ${FAL_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts }],
+      generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
+    }),
   });
-  if (!submitRes.ok) {
-    const txt = await submitRes.text();
-    throw new Error(`fal queue submit error (${endpointId}) ${submitRes.status}: ${txt.slice(0, 300)}`);
-  }
-  const { request_id } = await submitRes.json();
-  console.log(`[queue] ${endpointId} request_id:`, request_id);
 
-  const statusUrl = `https://queue.fal.run/${endpointId}/requests/${request_id}/status`;
-  const resultUrl = `https://queue.fal.run/${endpointId}/requests/${request_id}`;
-
-  for (let i = 0; i < maxAttempts; i++) {
-    await new Promise(r => setTimeout(r, 3000));
-    const statusRes = await fetch(statusUrl, { headers: { 'Authorization': `Key ${FAL_KEY}` } });
-    const statusText = await statusRes.text();
-    let status = {};
-    try { status = JSON.parse(statusText); } catch(_) {}
-    console.log(`[queue] ${endpointId} attempt ${i + 1}: ${status.status || 'unknown'}`);
-
-    if (status.status === 'COMPLETED') {
-      await new Promise(r => setTimeout(r, 1000));
-      const resultRes = await fetch(resultUrl, { headers: { 'Authorization': `Key ${FAL_KEY}` } });
-      const text = await resultRes.text();
-      console.log(`[queue] ${endpointId} result (first 200):`, text.slice(0, 200));
-      if (!text) throw new Error(`Empty result body from ${endpointId}`);
-      return JSON.parse(text);
-    }
-    if (status.status === 'FAILED') {
-      throw new Error(`fal queue job failed [${endpointId}]: ${JSON.stringify(status)}`);
-    }
-  }
-  throw new Error(`fal queue job timed out [${endpointId}] after ${maxAttempts} attempts`);
-}
-
-// Direct synchronous call (for partner/pro endpoints)
-async function falDirect(endpointId, input) {
-  console.log(`[direct] ${endpointId} calling...`);
-  const res = await fetch(`https://fal.run/${endpointId}`, {
-    method: 'POST',
-    headers: { 'Authorization': `Key ${FAL_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  });
   const text = await res.text();
-  console.log(`[direct] ${endpointId} result (first 200):`, text.slice(0, 200));
-  if (!res.ok) throw new Error(`fal direct error (${endpointId}) ${res.status}: ${text.slice(0, 300)}`);
-  if (!text) throw new Error(`Empty direct result from ${endpointId}`);
-  return JSON.parse(text);
+  console.log('[gemini] status:', res.status, '| response (first 400):', text.slice(0, 400));
+
+  if (!res.ok) throw new Error(`Gemini API error ${res.status}: ${text.slice(0, 400)}`);
+
+  const data = JSON.parse(text);
+  for (const candidate of (data?.candidates || [])) {
+    for (const part of (candidate?.content?.parts || [])) {
+      if (part.inlineData?.data) {
+        return { base64: part.inlineData.data, mimeType: part.inlineData.mimeType || 'image/jpeg' };
+      }
+    }
+  }
+  throw new Error(`No image in Gemini response: ${text.slice(0, 300)}`);
 }
 
-const PULID_BASE = {
-  num_images: 1,
-  num_inference_steps: 12,
-  guidance_scale: 1.2,
-  id_scale: 0.9,
-  mode: 'fidelity',
-  image_size: { width: 768, height: 1024 },
-  negative_prompt: 'deformed face, wrong identity, merged faces, extra limbs, distorted eyes, bad hands, blurry, low quality, duplicate person, bad anatomy',
-};
+// Upload base64 image as a hosted URL via Base44 UploadFile integration
+async function uploadBase64AsUrl(base44, base64Data, mimeType) {
+  const binaryStr = atob(base64Data);
+  const bytes = new Uint8Array(binaryStr.length);
+  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+  const blob = new Blob([bytes], { type: mimeType });
+
+  const form = new FormData();
+  const ext = mimeType.includes('png') ? 'png' : 'jpg';
+  form.append('file', blob, `output.${ext}`);
+
+  const result = await base44.asServiceRole.integrations.Core.UploadFile({ file: blob });
+  return result?.file_url;
+}
 
 // ── Solo transformation ────────────────────────────────────────────────────
-async function generateSolo(original_photo_url, prompt) {
-  console.log('[solo] Running PuLID...');
-  const result = await falQueue('fal-ai/pulid', {
-    ...PULID_BASE,
-    reference_images: [{ image_url: original_photo_url }],
-    prompt: `${prompt}, photorealistic, ultra detailed, 8K resolution, sharp focus`,
-  });
-  const url = extractUrl(result);
-  if (!url) throw new Error(`No URL from PuLID solo: ${JSON.stringify(result).slice(0, 300)}`);
+async function generateSolo(base44, original_photo_url, prompt) {
+  console.log('[solo] Fetching reference image...');
+  const { base64, mimeType } = await imageUrlToBase64(original_photo_url);
+
+  const parts = [
+    { inlineData: { mimeType, data: base64 } },
+    {
+      text: `This is the reference photo of a person. Generate a photorealistic portrait of THIS EXACT PERSON placed in the following scene: ${prompt}.
+
+Identity preservation rules (CRITICAL):
+- The person's face must be pixel-perfect identical to the reference — same bone structure, skin tone, eye color, nose shape, lip shape, hair color and texture.
+- Do NOT beautify, idealize, or alter their face in any way.
+- Only change the clothing, background, and lighting to match the era/scene.
+- Ultra detailed, 8K resolution, sharp focus, cinematic lighting.`,
+    },
+  ];
+
+  console.log('[solo] Calling Gemini...');
+  const result = await callGemini(parts);
+  const url = await uploadBase64AsUrl(base44, result.base64, result.mimeType);
+  if (!url) throw new Error('Failed to upload result');
   return url;
 }
 
 // ── Partners transformation ────────────────────────────────────────────────
-async function generatePartners(original_photo_url, extra_photo_url, prompt) {
-  console.log('[partners] Running PuLID for both people in parallel...');
-
-  // Step 1: Generate each person individually with PuLID (identity-preserving model)
-  const PULID_PARTNERS = { ...PULID_BASE, id_scale: 1.0 };
-  const [p1Result, p2Result] = await Promise.all([
-    falQueue('fal-ai/pulid', {
-      ...PULID_PARTNERS,
-      reference_images: [{ image_url: original_photo_url }],
-      prompt: `portrait of a person, ${prompt}, photorealistic, ultra detailed, 8K resolution, sharp focus, facing forward, full face visible, solo portrait`,
-    }),
-    falQueue('fal-ai/pulid', {
-      ...PULID_PARTNERS,
-      reference_images: [{ image_url: extra_photo_url }],
-      prompt: `portrait of a person, ${prompt}, photorealistic, ultra detailed, 8K resolution, sharp focus, facing forward, full face visible, solo portrait`,
-    }),
+async function generatePartners(base44, original_photo_url, extra_photo_url, prompt) {
+  console.log('[partners] Fetching both reference images...');
+  const [imgA, imgB] = await Promise.all([
+    imageUrlToBase64(original_photo_url),
+    imageUrlToBase64(extra_photo_url),
   ]);
 
-  const person1Url = extractUrl(p1Result);
-  const person2Url = extractUrl(p2Result);
-  if (!person1Url) throw new Error(`No URL from PuLID person A: ${JSON.stringify(p1Result).slice(0, 200)}`);
-  if (!person2Url) throw new Error(`No URL from PuLID person B: ${JSON.stringify(p2Result).slice(0, 200)}`);
-  console.log('[partners] Both portraits done. Compositing with Kontext...');
+  const parts = [
+    { text: 'Reference image 1 — Person A (first person):' },
+    { inlineData: { mimeType: imgA.mimeType, data: imgA.base64 } },
+    { text: 'Reference image 2 — Person B (second person):' },
+    { inlineData: { mimeType: imgB.mimeType, data: imgB.base64 } },
+    {
+      text: `Generate a single photorealistic image with BOTH Person A and Person B together in this scene: ${prompt}.
 
-  // Step 2: Use Kontext Multi to place both identity-preserved portraits into one scene
-  const kontextResult = await falDirect('fal-ai/flux-pro/kontext/multi', {
-    image_urls: [person1Url, person2Url],
-    prompt: `The first image shows person A and the second image shows person B. Place BOTH people together side by side in one unified scene: ${prompt}. Copy person A's face exactly from image 1 and person B's face exactly from image 2. Do NOT merge faces, do NOT use only one person, do NOT invent new faces. Both individuals must be clearly visible with their original facial features, skin tone, and identity fully preserved. Photorealistic, cinematic lighting.`,
-    guidance_scale: 3.5,
-    num_images: 1,
-    output_format: 'jpeg',
-    safety_tolerance: '4',
-  });
+Identity preservation rules (CRITICAL):
+- Person A's face must be IDENTICAL to Reference image 1 — exact facial structure, skin tone, eye color, hair, and every distinguishing feature.
+- Person B's face must be IDENTICAL to Reference image 2 — exact facial structure, skin tone, eye color, hair, and every distinguishing feature.
+- Do NOT merge their faces, do NOT invent new faces, do NOT show only one person.
+- Both people must be clearly visible with their original identities fully intact.
+- Only change their clothing, background, and lighting to match the scene.
+- Photorealistic, cinematic lighting, ultra detailed, 8K resolution.`,
+    },
+  ];
 
-  const finalUrl = extractUrl(kontextResult);
-  if (!finalUrl) throw new Error(`No URL from Kontext Multi: ${JSON.stringify(kontextResult).slice(0, 200)}`);
-  return finalUrl;
+  console.log('[partners] Calling Gemini...');
+  const result = await callGemini(parts);
+  const url = await uploadBase64AsUrl(base44, result.base64, result.mimeType);
+  if (!url) throw new Error('Failed to upload result');
+  return url;
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
   console.log('transformPhoto invoked');
 
-  // Validate API key up front
-  if (!FAL_KEY) {
-    console.error('FAL_API_KEY is not set');
+  if (!GEMINI_API_KEY) {
     return Response.json({
-      error: 'AI service is not configured. Please set FAL_API_KEY in your app secrets.',
+      error: 'AI service is not configured. Please set GEMINI_API_KEY in your app secrets.',
       error_code: 'MISSING_API_KEY',
     }, { status: 500 });
   }
@@ -160,50 +143,46 @@ Deno.serve(async (req) => {
     }
 
     const { prompt, original_photo_url, extra_photo_urls = [] } = body;
-    console.log('Params:', { promptSnippet: prompt?.slice(0, 80), original_photo_url, extra_count: extra_photo_urls.length });
+    console.log('Params:', { promptSnippet: prompt?.slice(0, 80), original_photo_url: original_photo_url?.slice(0, 60), extra_count: extra_photo_urls.length });
 
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (!original_photo_url) {
-      return Response.json({ error: 'original_photo_url is required' }, { status: 400 });
-    }
-    if (!prompt) {
-      return Response.json({ error: 'prompt is required' }, { status: 400 });
-    }
+    if (!original_photo_url) return Response.json({ error: 'original_photo_url is required' }, { status: 400 });
+    if (!prompt) return Response.json({ error: 'prompt is required' }, { status: 400 });
 
-    // Validate URLs are hosted (not local blobs)
     if (original_photo_url.startsWith('blob:') || original_photo_url.startsWith('data:')) {
       return Response.json({ error: 'Photo must be uploaded to a hosted URL before calling transformPhoto.' }, { status: 400 });
     }
 
     const isPartners = extra_photo_urls.length > 0;
-
     let url;
+
     if (isPartners) {
       const partnerUrl = extra_photo_urls[0];
       if (partnerUrl.startsWith('blob:') || partnerUrl.startsWith('data:')) {
         return Response.json({ error: 'Partner photo must be uploaded to a hosted URL.' }, { status: 400 });
       }
-      url = await generatePartners(original_photo_url, partnerUrl, prompt);
+      url = await generatePartners(base44, original_photo_url, partnerUrl, prompt);
     } else {
-      url = await generateSolo(original_photo_url, prompt);
+      url = await generateSolo(base44, original_photo_url, prompt);
     }
 
-    console.log('Transform complete:', url.slice(0, 60));
+    console.log('Transform complete:', url?.slice(0, 60));
     return Response.json({ url });
 
   } catch (error) {
     console.error('transformPhoto error:', error.message);
 
-    // Classify error for better UX
     let userMessage = error.message;
     if (error.message.includes('401') || error.message.includes('403')) {
-      userMessage = 'AI service authentication failed. Please check your FAL_API_KEY.';
+      userMessage = 'AI service authentication failed. Please check your GEMINI_API_KEY.';
+    } else if (error.message.includes('429') || error.message.includes('quota')) {
+      userMessage = 'Gemini API quota exceeded. Please enable billing on your Google AI account at https://aistudio.google.com.';
     } else if (error.message.includes('timed out')) {
       userMessage = 'Image generation took too long. Please try again.';
-    } else if (error.message.includes('FAILED')) {
-      userMessage = 'The AI model rejected this request. Please try a different photo or era.';
+    } else if (error.message.toLowerCase().includes('safety') || error.message.includes('RECITATION')) {
+      userMessage = 'The image was blocked by safety filters. Please try a different photo or era.';
     }
 
     return Response.json({ error: userMessage, raw_error: error.message }, { status: 500 });
