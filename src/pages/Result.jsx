@@ -9,6 +9,7 @@ import VideoGenerator from '@/components/result/VideoGenerator';
 import ShareToCommunityButton from '@/components/community/ShareToCommmunityButton';
 import BeforeAfterSlider from '@/components/result/BeforeAfterSlider';
 import ViralShareCard from '@/components/share/ViralShareCard';
+import SocialDeeplinks from '@/components/share/SocialDeeplinks';
 
 export default function Result() {
   const { id } = useParams();
@@ -90,7 +91,7 @@ export default function Result() {
                   </div>
                 )}
                 <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/50 backdrop-blur-sm">
-                  <span className="text-primary text-[9px] font-bold">⏰ Time Frame Shift</span>
+                  <span className="text-primary text-[9px] font-bold">⏰ Chronos Booth</span>
                 </div>
               </motion.div>
 
@@ -160,7 +161,10 @@ export default function Result() {
         </div>
 
         {t.status === 'completed' && t.transformed_photo_url && (
-          <ShareToCommunityButton transformation={t} />
+          <>
+            <SocialDeeplinks transformation={t} />
+            <ShareToCommunityButton transformation={t} />
+          </>
         )}
 
         <Button
