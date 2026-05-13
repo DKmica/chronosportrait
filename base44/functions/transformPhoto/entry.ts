@@ -100,16 +100,17 @@ async function generatePartners(original_photo_url, extra_photo_url, prompt) {
   console.log('[partners] Running PuLID for both people in parallel...');
 
   // Step 1: Generate each person individually with PuLID (identity-preserving model)
+  const PULID_PARTNERS = { ...PULID_BASE, id_scale: 1.0 };
   const [p1Result, p2Result] = await Promise.all([
     falQueue('fal-ai/pulid', {
-      ...PULID_BASE,
+      ...PULID_PARTNERS,
       reference_images: [{ image_url: original_photo_url }],
-      prompt: `${prompt}, photorealistic, ultra detailed, 8K resolution, sharp focus`,
+      prompt: `portrait of a person, ${prompt}, photorealistic, ultra detailed, 8K resolution, sharp focus, facing forward, full face visible, solo portrait`,
     }),
     falQueue('fal-ai/pulid', {
-      ...PULID_BASE,
+      ...PULID_PARTNERS,
       reference_images: [{ image_url: extra_photo_url }],
-      prompt: `${prompt}, photorealistic, ultra detailed, 8K resolution, sharp focus`,
+      prompt: `portrait of a person, ${prompt}, photorealistic, ultra detailed, 8K resolution, sharp focus, facing forward, full face visible, solo portrait`,
     }),
   ]);
 
@@ -122,7 +123,7 @@ async function generatePartners(original_photo_url, extra_photo_url, prompt) {
   // Step 2: Use Kontext Multi to place both identity-preserved portraits into one scene
   const kontextResult = await falDirect('fal-ai/flux-pro/kontext/multi', {
     image_urls: [person1Url, person2Url],
-    prompt: `Combine these two portraits into a single cohesive scene. Place both people side by side together. Keep each person's face, skin tone, and identity exactly as shown in their respective input images — do not alter any facial features. ${prompt}. The result should be one unified photorealistic image with both people clearly visible and distinct.`,
+    prompt: `The first image shows person A and the second image shows person B. Place BOTH people together side by side in one unified scene: ${prompt}. Copy person A's face exactly from image 1 and person B's face exactly from image 2. Do NOT merge faces, do NOT use only one person, do NOT invent new faces. Both individuals must be clearly visible with their original facial features, skin tone, and identity fully preserved. Photorealistic, cinematic lighting.`,
     guidance_scale: 3.5,
     num_images: 1,
     output_format: 'jpeg',
