@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
-import { Users, Flame, Clock } from 'lucide-react';
+import { Users, Flame, Clock, RefreshCw } from 'lucide-react';
 import CommunityPostCard from '@/components/community/CommunityPostCard';
 
 const SORTS = [
@@ -10,9 +10,34 @@ const SORTS = [
   { id: 'top', label: 'Top', icon: Flame },
 ];
 
+const PULL_THRESHOLD = 70;
+
 export default function Community() {
   const [sort, setSort] = useState('latest');
   const queryClient = useQueryClient();
+  const [pullY, setPullY] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const touchStartY = useRef(null);
+
+  const handleTouchStart = useCallback((e) => {
+    if (window.scrollY === 0) touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (touchStartY.current === null) return;
+    const delta = e.touches[0].clientY - touchStartY.current;
+    if (delta > 0) setPullY(Math.min(delta * 0.5, PULL_THRESHOLD));
+  }, []);
+
+  const handleTouchEnd = useCallback(async () => {
+    if (pullY >= PULL_THRESHOLD) {
+      setRefreshing(true);
+      await queryClient.invalidateQueries({ queryKey: ['community-posts'] });
+      setRefreshing(false);
+    }
+    setPullY(0);
+    touchStartY.current = null;
+  }, [pullY, queryClient]);
 
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ['community-posts'],
@@ -52,7 +77,20 @@ export default function Community() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div
+      className="min-h-screen"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull to refresh indicator */}
+      <motion.div
+        animate={{ height: pullY > 0 || refreshing ? 44 : 0, opacity: pullY > 0 || refreshing ? 1 : 0 }}
+        className="flex items-center justify-center overflow-hidden"
+      >
+        <RefreshCw className={`w-5 h-5 text-primary ${refreshing ? 'animate-spin' : ''}`} />
+      </motion.div>
+
       {/* Header */}
       <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4">
         <div className="flex items-center gap-2 mb-1">

@@ -1,11 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Crown, LogOut, ChevronRight, Sparkles, Shield, Star } from 'lucide-react';
+import { User, Crown, LogOut, ChevronRight, Sparkles, Shield, Star, Trash2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import ReferAndEarn from '@/components/referral/ReferAndEarn';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 const PLAN_LABELS = {
   free: { label: 'Free', color: 'text-muted-foreground', bg: 'bg-muted/50' },
@@ -95,7 +106,7 @@ export default function Settings() {
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-foreground truncate">{user?.full_name || 'Anonymous'}</p>
               <p className="text-muted-foreground text-sm truncate">{user?.email}</p>
-              <span className={`inline-block mt-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${planInfo.bg} ${planInfo.color}`}>
+              <span className={`inline-block mt-1 text-xs font-semibold px-2 py-0.5 rounded-full ${planInfo.bg} ${planInfo.color}`}>
                 {planInfo.label}
               </span>
             </div>
@@ -113,15 +124,15 @@ export default function Settings() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="text-center">
                   <p className="text-2xl font-bold text-foreground font-display">{profile.total_transformations || 0}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Total</p>
-                </div>
-                <div className="text-center border-x border-border">
+                  <p className="text-xs text-muted-foreground mt-0.5">Total</p>
+                  </div>
+                  <div className="text-center border-x border-border">
                   <p className="text-2xl font-bold text-foreground font-display">{profile.transformations_today || 0}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Today</p>
-                </div>
-                <div className="text-center">
+                  <p className="text-xs text-muted-foreground mt-0.5">Today</p>
+                  </div>
+                  <div className="text-center">
                   <p className="text-2xl font-bold text-primary font-display">🔥 {profile.streak_days || 0}</p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">Day Streak</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Day Streak</p>
                 </div>
               </div>
               {profile.bonus_transformations > 0 && (
@@ -238,6 +249,42 @@ export default function Settings() {
               <LogOut className="w-4 h-4" />
               Sign Out
             </Button>
+          </motion.div>
+
+          {/* Delete Account */}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="w-full h-12 rounded-xl text-destructive hover:bg-destructive/10 gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete Account
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Account</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete your account and all your transformations. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => base44.auth.logout()}
+                  >
+                    Delete Account
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </motion.div>
 
           <p className="text-center text-xs text-muted-foreground">Chronos Booth v1.0</p>

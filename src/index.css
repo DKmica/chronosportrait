@@ -87,5 +87,11 @@
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
+    overscroll-behavior: none;
+  }
+
+  button, a, [role="button"] {
+    user-select: none;
+    -webkit-user-select: none;
   }
 }
