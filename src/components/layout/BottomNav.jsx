@@ -1,7 +1,8 @@
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Image, Sparkles, Users, Settings, Zap, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useTabNavigation } from '@/lib/NavigationContext';
 
 const navItems = [
   { path: '/', icon: Sparkles, label: 'Transform' },
@@ -13,6 +14,13 @@ const navItems = [
 
 export default function BottomNav() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { selectTab } = useTabNavigation();
+
+  const handleTabClick = (path) => {
+    selectTab(path);
+    navigate(path);
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-t border-border">
@@ -20,10 +28,10 @@ export default function BottomNav() {
         {navItems.map(({ path, icon: Icon, label }) => {
           const isActive = location.pathname === path;
           return (
-            <Link
+            <button
               key={path}
-              to={path}
-              className="flex flex-col items-center gap-1 px-4 py-1 relative"
+              onClick={() => handleTabClick(path)}
+              className="flex flex-col items-center gap-1 px-4 py-1 relative transition-colors"
             >
               {isActive && (
                 <motion.div
@@ -37,13 +45,13 @@ export default function BottomNav() {
                 }`}
               />
               <span
-                className={`text-[12px] font-medium transition-colors ${
+                className={`text-xs font-medium transition-colors ${
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >
                 {label}
               </span>
-            </Link>
+            </button>
           );
         })}
       </div>

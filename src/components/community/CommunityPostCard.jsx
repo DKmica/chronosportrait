@@ -49,7 +49,7 @@ export default function CommunityPostCard({ post, currentUserEmail, onLikeToggle
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 p-3">
           <p className="text-white font-display font-semibold text-sm">{post.era_label}</p>
-          <p className="text-white/60 text-[10px]">by {post.author_name || 'Anonymous'}</p>
+          <p className="text-white/60 text-xs">by {post.author_name || 'Anonymous'}</p>
         </div>
       </div>
 
@@ -98,16 +98,16 @@ export default function CommunityPostCard({ post, currentUserEmail, onLikeToggle
                 </div>
               )}
               {comments && comments.length === 0 && (
-                <p className="text-muted-foreground text-xs text-center py-2">No comments yet. Be the first!</p>
+                <p className="text-muted-foreground text-sm text-center py-2">No comments yet. Be the first!</p>
               )}
               {comments && comments.map((c) => (
                 <div key={c.id} className="flex gap-2">
-                  <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-primary">
+                  <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 text-xs font-bold text-primary">
                     {(c.author_name || 'A')[0].toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-foreground">{c.author_name || 'Anonymous'}</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">{c.text}</p>
+                    <p className="text-sm font-semibold text-foreground">{c.author_name || 'Anonymous'}</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{c.text}</p>
                   </div>
                 </div>
               ))}
@@ -121,7 +121,7 @@ export default function CommunityPostCard({ post, currentUserEmail, onLikeToggle
                 onChange={(e) => setCommentText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSubmitComment()}
                 placeholder="Add a comment…"
-                className="flex-1 rounded-xl bg-secondary/60 border border-border text-foreground text-xs placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                className="flex-1 rounded-xl bg-secondary/60 border border-border text-foreground text-sm placeholder:text-muted-foreground px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
               />
               <button
                 onClick={handleSubmitComment}

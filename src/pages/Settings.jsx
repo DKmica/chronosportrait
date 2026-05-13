@@ -27,6 +27,8 @@ const PLAN_LABELS = {
 export default function Settings() {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -49,6 +51,23 @@ export default function Settings() {
 
   const handleLogin = () => base44.auth.redirectToLogin();
   const handleLogout = () => base44.auth.logout();
+  
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      // Delete user profile data
+      if (profile?.id) {
+        await base44.entities.UserProfile.delete(profile.id);
+      }
+      // Logout user
+      base44.auth.logout();
+    } catch (error) {
+      console.error('Delete account error:', error);
+      setDeleteError('Failed to delete account. Please try again.');
+      setDeleting(false);
+    }
+  };
 
   if (isAuthenticated === null) {
     return (
@@ -268,26 +287,38 @@ export default function Settings() {
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Account</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will permanently delete your account and all your transformations. This action cannot be undone.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    onClick={() => base44.auth.logout()}
-                  >
-                    Delete Account
-                  </AlertDialogAction>
-                </AlertDialogFooter>
+               <AlertDialogHeader>
+                 <AlertDialogTitle>Delete Account?</AlertDialogTitle>
+                 <AlertDialogDescription className="space-y-2">
+                   <p>This action <strong>cannot be undone</strong>.</p>
+                   <p>We will permanently delete:</p>
+                   <ul className="list-disc list-inside text-xs space-y-1 ml-2">
+                     <li>Your account and profile</li>
+                     <li>All transformations and saved images</li>
+                     <li>Your referral code and bonuses</li>
+                   </ul>
+                 </AlertDialogDescription>
+               </AlertDialogHeader>
+               {deleteError && (
+                 <div className="px-4 py-2 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                   {deleteError}
+                 </div>
+               )}
+               <AlertDialogFooter>
+                 <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+                 <AlertDialogAction
+                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+                   onClick={handleDeleteAccount}
+                   disabled={deleting}
+                 >
+                   {deleting ? 'Deleting...' : 'Delete My Account'}
+                 </AlertDialogAction>
+               </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
           </motion.div>
 
-          <p className="text-center text-xs text-muted-foreground">Chronos Booth v1.0</p>
+          <p className="text-center text-sm text-muted-foreground">Chronos Booth v1.0</p>
         </div>
       )}
     </div>

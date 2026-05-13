@@ -99,12 +99,12 @@ export default function Result() {
                   </div>
                 )}
                 <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/50 backdrop-blur-sm">
-                  <span className="text-primary text-[9px] font-bold">⏰ Chronos Booth</span>
+                  <span className="text-primary text-xs font-bold">⏰ Chronos Booth</span>
                 </div>
               </motion.div>
 
               <div className="mt-4">
-                <p className="text-muted-foreground text-xs mb-2 font-medium uppercase tracking-wider">
+                <p className="text-muted-foreground text-sm mb-2 font-medium uppercase tracking-wider">
                   Original{t.extra_photo_urls?.length > 0 ? 's' : ''}
                 </p>
                 <div className="flex gap-2 flex-wrap">
@@ -128,7 +128,7 @@ export default function Result() {
                 afterUrl={t.transformed_photo_url}
                 label={t.era_label}
               />
-              <p className="text-center text-xs text-muted-foreground mt-3">← Drag the handle to compare →</p>
+              <p className="text-center text-sm text-muted-foreground mt-3">← Drag the handle to compare →</p>
             </motion.div>
           )}
 

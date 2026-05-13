@@ -166,7 +166,7 @@ Be dramatic and poetic. Make the user feel the result is uniquely personal.`,
         </button>
         <div>
           <h1 className="font-display text-xl font-bold text-foreground">Find Your Timeline</h1>
-          <p className="text-muted-foreground text-xs">AI reveals your true era</p>
+          <p className="text-muted-foreground text-sm">AI reveals your true era</p>
         </div>
       </div>
 
@@ -191,7 +191,7 @@ Be dramatic and poetic. Make the user feel the result is uniquely personal.`,
 
             {/* Photo upload */}
             <div>
-              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              <p className="text-sm font-semibold text-foreground uppercase tracking-wider mb-3">
                 Upload Your Selfie
               </p>
               <PhotoUploader
@@ -221,14 +221,14 @@ Be dramatic and poetic. Make the user feel the result is uniquely personal.`,
 
             {/* Era preview grid */}
             <div>
-              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-3">
+              <p className="text-sm text-muted-foreground uppercase tracking-wider font-semibold mb-3">
                 Which era awaits you?
               </p>
               <div className="grid grid-cols-4 gap-2">
                 {ERA_RESULTS.map((e) => (
                   <div key={e.id} className="flex flex-col items-center gap-1 py-2 rounded-xl bg-muted/40 border border-border">
                     <span className="text-2xl">{e.emoji}</span>
-                    <span className="text-[9px] text-muted-foreground text-center leading-tight font-medium">{e.era.split(' ')[0]}</span>
+                    <span className="text-xs text-muted-foreground text-center leading-tight font-medium">{e.era.split(' ')[0]}</span>
                   </div>
                 ))}
               </div>
@@ -246,7 +246,7 @@ Be dramatic and poetic. Make the user feel the result is uniquely personal.`,
               <div className="absolute inset-0 bg-black/30" />
               <div className="relative z-10">
                 <div className="text-6xl mb-3">{result.emoji}</div>
-                <p className="text-xs uppercase tracking-widest font-semibold opacity-70 mb-1">{result.period}</p>
+                <p className="text-sm uppercase tracking-widest font-semibold opacity-70 mb-1">{result.period}</p>
                 <h2 className="font-display text-3xl font-bold mb-3">{result.era}</h2>
                 <div className="w-16 h-0.5 bg-white/40 mx-auto mb-4" />
                 <p className="text-white/90 text-base italic leading-relaxed">
@@ -260,7 +260,7 @@ Be dramatic and poetic. Make the user feel the result is uniquely personal.`,
                         style={{ width: `${result.confidence}%` }}
                       />
                     </div>
-                    <span className="text-xs text-white/70">{result.confidence}% match</span>
+                    <span className="text-sm text-white/70">{result.confidence}% match</span>
                   </div>
                 )}
               </div>
@@ -274,7 +274,7 @@ Be dramatic and poetic. Make the user feel the result is uniquely personal.`,
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground">Your selfie</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">AI detected your timeline</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">AI detected your timeline</p>
                 </div>
               </div>
             )}
@@ -308,7 +308,7 @@ Be dramatic and poetic. Make the user feel the result is uniquely personal.`,
 
             {/* Other eras teaser */}
             <div className="rounded-2xl bg-muted/30 border border-border p-4">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
+              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">
                 Or explore any era
               </p>
               <div className="flex flex-wrap gap-2">
@@ -316,7 +316,7 @@ Be dramatic and poetic. Make the user feel the result is uniquely personal.`,
                   <button
                     key={e.id}
                     onClick={() => navigate(`/?era=${e.id}`)}
-                    className="px-3 py-1.5 rounded-xl bg-secondary border border-border text-xs font-medium text-foreground hover:border-primary/40 transition-colors"
+                    className="px-3 py-1.5 rounded-xl bg-secondary border border-border text-sm font-medium text-foreground hover:border-primary/40 transition-colors"
                   >
                     {e.emoji} {e.era.split(' ')[0]}
                   </button>

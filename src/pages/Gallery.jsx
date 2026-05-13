@@ -77,7 +77,7 @@ export default function Gallery() {
           <Images className="w-5 h-5 text-primary" />
           <h1 className="font-display text-xl font-bold text-foreground">Gallery</h1>
         </div>
-        <p className="text-muted-foreground text-xs ml-7">{completed.length} portrait{completed.length !== 1 ? 's' : ''} created</p>
+        <p className="text-muted-foreground text-sm ml-7">{completed.length} portrait{completed.length !== 1 ? 's' : ''} created</p>
       </div>
 
       {/* Tabs */}
@@ -87,7 +87,7 @@ export default function Gallery() {
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 tab === id ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -132,11 +132,11 @@ export default function Gallery() {
               {/* Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
               <div className="absolute bottom-2 left-2 right-2">
-                <p className="text-white text-xs font-semibold leading-tight truncate">{t.era_label}</p>
+                <p className="text-white text-sm font-semibold leading-tight truncate">{t.era_label}</p>
                 {t.extra_photo_urls?.length > 0 && (
                   <div className="flex items-center gap-0.5 mt-0.5">
                     <Users className="w-2.5 h-2.5 text-white/60" />
-                    <span className="text-[12px] text-white/60">Partners</span>
+                    <span className="text-xs text-white/60">Partners</span>
                   </div>
                 )}
               </div>

@@ -97,7 +97,7 @@ export default function Community() {
           <Users className="w-5 h-5 text-primary" />
           <h1 className="font-display text-xl font-bold text-foreground">Community</h1>
         </div>
-        <p className="text-muted-foreground text-xs ml-7">Portraits shared by time travelers</p>
+        <p className="text-muted-foreground text-sm ml-7">Portraits shared by time travelers</p>
       </div>
 
       {/* Sort tabs */}

@@ -60,8 +60,8 @@ export default function ReferAndEarn({ profile }) {
           <Gift className="w-4 h-4 text-primary" />
           <h3 className="font-display text-sm font-semibold text-foreground uppercase tracking-wider">Refer &amp; Earn</h3>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Share your link — you get <span className="text-primary font-semibold">+{REFERRAL_BONUS_REFERRER} free generations</span> per friend who joins, they get <span className="text-primary font-semibold">+{REFERRAL_BONUS_NEW_USER}</span>.
+        <p className="text-sm text-muted-foreground">
+         Share your link — you get <span className="text-primary font-semibold">+{REFERRAL_BONUS_REFERRER} free generations</span> per friend who joins, they get <span className="text-primary font-semibold">+{REFERRAL_BONUS_NEW_USER}</span>.
         </p>
       </div>
 
@@ -70,12 +70,12 @@ export default function ReferAndEarn({ profile }) {
         <div className="flex items-center gap-3 rounded-xl bg-muted/40 border border-border px-4 py-3">
           <Users className="w-4 h-4 text-primary flex-shrink-0" />
           <div>
-            <p className="text-xs text-muted-foreground">Referral code</p>
+            <p className="text-sm text-muted-foreground">Referral code</p>
             <p className="font-mono font-bold text-foreground tracking-widest text-sm">{profile.referral_code}</p>
           </div>
           {profile.bonus_transformations > 0 && (
             <div className="ml-auto text-right">
-              <p className="text-xs text-muted-foreground">Bonus credits</p>
+              <p className="text-sm text-muted-foreground">Bonus credits</p>
               <p className="font-bold text-primary text-sm">+{profile.bonus_transformations}</p>
             </div>
           )}
@@ -83,14 +83,14 @@ export default function ReferAndEarn({ profile }) {
 
         {/* Share your link */}
         <div>
-          <p className="text-xs text-muted-foreground font-medium mb-2">Your referral link</p>
+          <p className="text-sm text-muted-foreground font-medium mb-2">Your referral link</p>
           <div className="flex gap-2">
-            <div className="flex-1 rounded-xl bg-secondary/60 border border-border px-3 py-2.5 text-xs text-muted-foreground truncate">
+            <div className="flex-1 rounded-xl bg-secondary/60 border border-border px-3 py-2.5 text-sm text-muted-foreground truncate">
               {referralLink}
             </div>
             <button
               onClick={handleCopyLink}
-              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-primary/15 border border-primary/30 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl bg-primary/15 border border-primary/30 text-primary text-sm font-semibold hover:bg-primary/25 transition-colors"
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               {copied ? 'Copied!' : 'Copy'}
@@ -109,7 +109,7 @@ export default function ReferAndEarn({ profile }) {
         {/* Redeem a friend's code */}
         {!profile.referred_by && (
           <div className="pt-1 border-t border-border">
-            <p className="text-xs text-muted-foreground font-medium mb-2">Have a friend's code? Redeem it for a free generation</p>
+            <p className="text-sm text-muted-foreground font-medium mb-2">Have a friend's code? Redeem it for a free generation</p>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -129,17 +129,17 @@ export default function ReferAndEarn({ profile }) {
               </Button>
             </div>
             {redeemStatus === 'success' && (
-              <p className="text-xs text-green-400 mt-2 flex items-center gap-1">
+              <p className="text-sm text-green-400 mt-2 flex items-center gap-1">
                 <Check className="w-3 h-3" /> {redeemMessage}
               </p>
             )}
             {redeemStatus === 'error' && (
-              <p className="text-xs text-destructive mt-2">{redeemMessage}</p>
+              <p className="text-sm text-destructive mt-2">{redeemMessage}</p>
             )}
-          </div>
-        )}
-        {profile.referred_by && (
-          <p className="text-xs text-muted-foreground pt-1 border-t border-border">
+            </div>
+            )}
+            {profile.referred_by && (
+            <p className="text-sm text-muted-foreground pt-1 border-t border-border">
             ✓ You joined via referral code <span className="font-mono">{profile.referred_by}</span>
           </p>
         )}
