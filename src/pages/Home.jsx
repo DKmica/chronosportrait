@@ -19,11 +19,14 @@ import AdGateModal from '@/components/transform/AdGateModal';
 import { getOrCreateProfile, getRemainingToday, consumeTransformation } from '@/lib/usageLimit';
 import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt, buildKidsPrompt, buildPetPrompt } from '@/lib/faceSwapPrompt';
 
-const GENERATED_IMAGE_PATTERNS = ['generated_image', 'output.', 'chronos-booth', 'transformed', 'ai-generated', 'result'];
+const GENERATED_IMAGE_PATTERNS = ['generated_image', 'chronos-booth', 'ai-generated'];
 function looksLikeGeneratedImage(url) {
   if (!url) return false;
-  const lower = url.toLowerCase();
-  return GENERATED_IMAGE_PATTERNS.some(p => lower.includes(p));
+  const filename = url.split('/').pop().toLowerCase();
+  return GENERATED_IMAGE_PATTERNS.some(p => filename.includes(p)) ||
+    filename.startsWith('output.') ||
+    filename.startsWith('result.') ||
+    filename.startsWith('transformed.');
 }
 
 const FREE_DAILY_LIMIT = 3;

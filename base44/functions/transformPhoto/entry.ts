@@ -98,13 +98,17 @@ async function generateMultiPerson(base44, allPhotoUrls, prompt) {
 // ── Generated image URL detector ──────────────────────────────────────────
 
 const GENERATED_IMAGE_PATTERNS = [
-  'generated_image', 'output.', 'chronos-booth', 'transformed', 'ai-generated', 'result'
+  'generated_image', 'chronos-booth', 'ai-generated',
 ];
 
+// Check only the filename portion (after last slash) to avoid false positives on path segments
 function looksLikeGeneratedImage(url) {
   if (!url) return false;
-  const lower = url.toLowerCase();
-  return GENERATED_IMAGE_PATTERNS.some(p => lower.includes(p));
+  const filename = url.split('/').pop().toLowerCase();
+  return GENERATED_IMAGE_PATTERNS.some(p => filename.includes(p)) ||
+    filename.startsWith('output.') ||
+    filename.startsWith('result.') ||
+    filename.startsWith('transformed.');
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────
