@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { X, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function GroupPhotoUploader({ photos, onAdd, onRemove }) {
+export default function GroupPhotoUploader({ photos, onAdd, onRemove, maxPhotos = 5 }) {
   const inputRef = useRef(null);
 
   const handleFiles = (e) => {
@@ -48,15 +48,17 @@ export default function GroupPhotoUploader({ photos, onAdd, onRemove }) {
       )}
 
       {/* Add button */}
-      <button
-        onClick={() => inputRef.current?.click()}
-        className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40 transition-colors"
-      >
-        <Plus className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground font-medium">
-          {photos.length === 0 ? 'Add photos of everyone' : 'Add more people'}
-        </span>
-      </button>
+      {photos.length < maxPhotos && (
+        <button
+          onClick={() => inputRef.current?.click()}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40 transition-colors"
+        >
+          <Plus className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground font-medium">
+            {photos.length === 0 ? 'Add photos (2–5 people)' : `Add more (${maxPhotos - photos.length} remaining)`}
+          </span>
+        </button>
+      )}
 
       {photos.length > 0 && (
         <p className="text-center text-xs text-muted-foreground">{photos.length} person{photos.length !== 1 ? 's' : ''} added</p>

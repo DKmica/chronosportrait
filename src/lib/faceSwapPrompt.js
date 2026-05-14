@@ -59,6 +59,27 @@ ${styleSuffix}`.trim();
 }
 
 /**
+ * Build a group prompt for 2-5 people.
+ */
+export function buildGroupPrompt({ eraPrompt, count = 2, styleSuffix = '' }) {
+  return `CRITICAL MULTI-PERSON IDENTITY-PRESERVATION INSTRUCTIONS:
+${count} reference photos are provided — one per person.
+- For EACH reference photo, copy that person's face EXACTLY into the output.
+- Place all ${count} people together in the same cohesive era scene, side by side.
+- DO NOT merge faces. DO NOT swap identities. Every face must be immediately recognizable as the person in their reference photo.
+- Preserve each person's: face shape, bone structure, eye color, skin tone, age, and all distinguishing features.
+- ONLY change: clothing/costume, hairstyle, background, lighting, and era-appropriate props.
+- CRITICAL PROPORTIONS: All figures must be anatomically proportional — no oversized or undersized heads. Consistent scale and perspective for all people.
+- Ultra high-fidelity faces, photorealistic, 8K detail.
+- Negative: ${NEGATIVE_PROMPT}, disproportionate head, oversized head, unequal proportions
+
+ERA TRANSFORMATION:
+${eraPrompt}
+
+${styleSuffix}`.trim();
+}
+
+/**
  * Legacy group prompt builder (kept for backwards compatibility).
  */
 export function buildGroupFaceSwapPrompt(modePrefix, eraPrompt, styleSuffix = '') {

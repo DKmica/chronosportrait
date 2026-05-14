@@ -6,17 +6,18 @@ import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { ERAS } from '@/lib/eras';
-import { AD_GATED_MODES, SPECIAL_MODES } from '@/lib/specialModes';
+import { AD_GATED_MODES, SPECIAL_MODES, KID_SCENARIOS, PET_SCENARIOS } from '@/lib/specialModes';
 import EraCard from '@/components/transform/EraCard';
 import CustomEraCard from '@/components/transform/CustomEraCard';
 import PhotoUploader from '@/components/transform/PhotoUploader';
 import PartnersConfig from '@/components/transform/PartnersConfig.jsx';
 import SpecialModeBar from '@/components/transform/SpecialModeBar';
-import StyleSelector, { STYLE_PROMPTS } from '@/components/transform/StyleSelector';
+import ScenarioSelector from '@/components/transform/ScenarioSelector';
+import GroupPhotoUploader from '@/components/transform/GroupPhotoUploader';
 import LimitBanner from '@/components/transform/LimitBanner';
 import AdGateModal from '@/components/transform/AdGateModal';
 import { getOrCreateProfile, getRemainingToday, consumeTransformation } from '@/lib/usageLimit';
-import { buildFaceSwapPrompt, buildPartnersPrompt } from '@/lib/faceSwapPrompt';
+import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt } from '@/lib/faceSwapPrompt';
 
 const FREE_DAILY_LIMIT = 3;
 
@@ -41,6 +42,17 @@ export default function Home() {
   const [customStyleA, setCustomStyleA] = useState('');
   const [styleB, setStyleB] = useState('default');
   const [customStyleB, setCustomStyleB] = useState('');
+
+  // Kids mode state
+  const [selectedKidScenario, setSelectedKidScenario] = useState(null);
+  const [customKidText, setCustomKidText] = useState('');
+
+  // Pet mode state
+  const [selectedPetScenario, setSelectedPetScenario] = useState(null);
+  const [customPetText, setCustomPetText] = useState('');
+
+  // Group mode state
+  const [groupPhotos, setGroupPhotos] = useState([]); // [{file, preview, url}]
 
   // Shared state
   const [selectedEra, setSelectedEra] = useState(null);
@@ -93,6 +105,9 @@ export default function Home() {
 
   const remaining = userProfile ? getRemainingToday(userProfile) : FREE_DAILY_LIMIT;
   const isPartnersMode = selectedMode === 'partners';
+  const isKidsMode = selectedMode === 'kids';
+  const isPetMode = selectedMode === 'pet';
+  const isGroupMode = selectedMode === 'group';
 
   const handlePhotoSelect = async (file) => {
     setPhoto(file);
@@ -120,8 +135,20 @@ export default function Home() {
     setSelectedMode(modeId);
   };
 
+  const handleGroupAdd = (file, preview) => {
+    if (groupPhotos.length >= 5) return;
+    setGroupPhotos(prev => [...prev, { file, preview, url: null }]);
+  };
+
+  const handleGroupRemove = (index) => {
+    setGroupPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
   const canTransform = () => {
     if (isPartnersMode) return photoPreviewA && photoPreviewB && selectedEra;
+    if (isKidsMode) return photoPreview && selectedKidScenario;
+    if (isPetMode) return photoPreview && selectedPetScenario;
+    if (isGroupMode) return groupPhotos.length >= 2 && selectedEra;
     return photoPreview && selectedEra;
   };
 
@@ -136,16 +163,29 @@ export default function Home() {
     try {
       // Step 1: Upload photo(s)
       setTransformStep(1);
-      let uploadedUrl = isPartnersMode ? photoUrlA : photoUrl;
-      if (!uploadedUrl) {
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: isPartnersMode ? photoA : photo });
-        uploadedUrl = file_url;
-        if (isPartnersMode) setPhotoUrlA(file_url);
-        else setPhotoUrl(file_url);
-      }
-
+      let uploadedUrl;
       let extraUrls = [];
-      if (isPartnersMode) {
+
+      if (isGroupMode) {
+        // Upload all group photos
+        const uploaded = await Promise.all(
+          groupPhotos.map(async (p, i) => {
+            if (p.url) return p.url;
+            const { file_url } = await base44.integrations.Core.UploadFile({ file: p.file });
+            return file_url;
+          })
+        );
+        // Update cached urls
+        setGroupPhotos(prev => prev.map((p, i) => ({ ...p, url: uploaded[i] })));
+        uploadedUrl = uploaded[0];
+        extraUrls = uploaded.slice(1);
+      } else if (isPartnersMode) {
+        uploadedUrl = photoUrlA;
+        if (!uploadedUrl) {
+          const { file_url } = await base44.integrations.Core.UploadFile({ file: photoA });
+          uploadedUrl = file_url;
+          setPhotoUrlA(file_url);
+        }
         let uploadedUrlB = photoUrlB;
         if (!uploadedUrlB) {
           const { file_url: urlB } = await base44.integrations.Core.UploadFile({ file: photoB });
@@ -153,22 +193,28 @@ export default function Home() {
           setPhotoUrlB(urlB);
         }
         extraUrls = [uploadedUrlB];
+      } else {
+        uploadedUrl = photoUrl;
+        if (!uploadedUrl) {
+          const { file_url } = await base44.integrations.Core.UploadFile({ file: photo });
+          uploadedUrl = file_url;
+          setPhotoUrl(file_url);
+        }
       }
 
       // Step 2: Build prompt
       setTransformStep(2);
-      const baseEraPrompt = selectedEra?.id === 'custom' ? customEraText : selectedEra?.prompt;
-      const selectedModeConfig = SPECIAL_MODES.find(mode => mode.id === selectedMode);
-      const eraPrompt = selectedModeConfig?.promptPrefix && !isPartnersMode
-        ? `${selectedModeConfig.promptPrefix}${baseEraPrompt}`
-        : baseEraPrompt;
-      const stylePrompt = STYLE_PROMPTS[selectedStyle] || '';
+      const stylePrompt = '';
 
       let finalPrompt;
+      let eraId = selectedEra?.id;
+      let eraLabel = selectedEra?.label;
+
       if (isPartnersMode) {
+        const baseEraPrompt = selectedEra?.id === 'custom' ? customEraText : selectedEra?.prompt;
         const resolvedVibe = relationshipVibe === 'custom' ? (customRelationshipVibe || 'partners') : relationshipVibe;
         finalPrompt = buildPartnersPrompt({
-          eraPrompt,
+          eraPrompt: baseEraPrompt,
           relationshipVibe: resolvedVibe,
           styleA: styleA === 'custom' ? '' : styleA,
           styleB: styleB === 'custom' ? '' : styleB,
@@ -176,8 +222,34 @@ export default function Home() {
           customStyleB: styleB === 'custom' ? customStyleB : '',
           styleSuffix: stylePrompt,
         });
+        eraId = selectedEra?.id === 'custom' ? 'custom' : selectedEra?.id;
+        eraLabel = selectedEra?.label;
+      } else if (isKidsMode) {
+        const scenario = selectedKidScenario;
+        const scenarioPrompt = scenario.id === 'custom' ? customKidText : scenario.prompt;
+        finalPrompt = `CRITICAL IDENTITY-PRESERVATION: This is a child. Copy the child's face EXACTLY from the reference photo — face shape, skin tone, eye color, age. ONLY change clothing, background, and accessories.\n\n${scenarioPrompt}\n\nChild-safe, whimsical, colorful, photorealistic, 8K.`;
+        eraId = `kids_${scenario.id}`;
+        eraLabel = scenario.label;
+      } else if (isPetMode) {
+        const scenario = selectedPetScenario;
+        const scenarioPrompt = scenario.id === 'custom' ? customPetText : scenario.prompt;
+        finalPrompt = `CRITICAL: This is a pet animal. Preserve this specific animal's appearance — breed, color, fur/feather pattern, size, and markings. Only change attire, accessories, and background.\n\n${scenarioPrompt}\n\nDetailed, photorealistic, 8K.`;
+        eraId = `pet_${scenario.id}`;
+        eraLabel = scenario.label;
+      } else if (isGroupMode) {
+        const baseEraPrompt = selectedEra?.id === 'custom' ? customEraText : selectedEra?.prompt;
+        finalPrompt = buildGroupPrompt({ eraPrompt: baseEraPrompt, count: groupPhotos.length, styleSuffix: stylePrompt });
+        eraId = selectedEra?.id === 'custom' ? 'custom' : selectedEra?.id;
+        eraLabel = selectedEra?.label;
       } else {
+        const baseEraPrompt = selectedEra?.id === 'custom' ? customEraText : selectedEra?.prompt;
+        const selectedModeConfig = SPECIAL_MODES.find(mode => mode.id === selectedMode);
+        const eraPrompt = selectedModeConfig?.promptPrefix
+          ? `${selectedModeConfig.promptPrefix}${baseEraPrompt}`
+          : baseEraPrompt;
         finalPrompt = buildFaceSwapPrompt(eraPrompt, stylePrompt);
+        eraId = selectedEra?.id === 'custom' ? 'custom' : selectedEra?.id;
+        eraLabel = selectedEra?.id === 'custom' ? (customEraText.slice(0, 30) || 'Custom Era') : selectedEra?.label;
       }
 
       // Step 3: Create DB record
@@ -185,8 +257,8 @@ export default function Home() {
       const transformation = await base44.entities.Transformation.create({
         original_photo_url: uploadedUrl,
         extra_photo_urls: extraUrls,
-        era: selectedEra?.id === 'custom' ? 'custom' : selectedEra?.id,
-        era_label: selectedEra?.id === 'custom' ? (customEraText.slice(0, 30) || 'Custom Era') : selectedEra?.label,
+        era: eraId,
+        era_label: eraLabel,
         status: 'processing',
       });
 
@@ -259,9 +331,24 @@ export default function Home() {
             styleA={styleA} onStyleAChange={setStyleA} customStyleA={customStyleA} onCustomStyleAChange={setCustomStyleA}
             styleB={styleB} onStyleBChange={setStyleB} customStyleB={customStyleB} onCustomStyleBChange={setCustomStyleB}
           />
+        ) : isGroupMode ? (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Group Photos (2–5 people)</p>
+              <span className="text-xs text-muted-foreground">{groupPhotos.length}/5</span>
+            </div>
+            <GroupPhotoUploader
+              photos={groupPhotos}
+              onAdd={handleGroupAdd}
+              onRemove={handleGroupRemove}
+              maxPhotos={5}
+            />
+          </div>
         ) : (
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Your Photo</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              {isKidsMode ? "Child's Photo" : isPetMode ? "Pet's Photo" : 'Your Photo'}
+            </p>
             <PhotoUploader
               photoPreview={photoPreview}
               onPhotoSelect={handlePhotoSelect}
@@ -270,41 +357,67 @@ export default function Home() {
           </div>
         )}
 
-        {/* Era grid */}
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Choose Your Era</p>
-            <button onClick={() => navigate('/era-pack')} className="text-xs text-primary font-semibold flex items-center gap-1">
-              Era Packs <ChevronRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            {ERAS.map((era, i) => (
-              <EraCard
-                key={era.id}
-                era={era}
-                isSelected={selectedEra?.id === era.id}
-                onClick={() => setSelectedEra(era)}
-                index={i}
+        {/* Kids scenario selector */}
+        {isKidsMode && (
+          <ScenarioSelector
+            scenarios={KID_SCENARIOS}
+            selected={selectedKidScenario}
+            onSelect={setSelectedKidScenario}
+            customText={customKidText}
+            onCustomTextChange={setCustomKidText}
+            label="Choose a Kid Scenario"
+          />
+        )}
+
+        {/* Pet scenario selector */}
+        {isPetMode && (
+          <ScenarioSelector
+            scenarios={PET_SCENARIOS}
+            selected={selectedPetScenario}
+            onSelect={setSelectedPetScenario}
+            customText={customPetText}
+            onCustomTextChange={setCustomPetText}
+            label="Choose a Pet Scenario"
+          />
+        )}
+
+        {/* Era grid — shown for solo, partners, group, birthday (not kids/pet) */}
+        {!isKidsMode && !isPetMode && (
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Choose Your Era</p>
+              <button onClick={() => navigate('/era-pack')} className="text-xs text-primary font-semibold flex items-center gap-1">
+                Era Packs <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {ERAS.map((era, i) => (
+                <EraCard
+                  key={era.id}
+                  era={era}
+                  isSelected={selectedEra?.id === era.id}
+                  onClick={() => setSelectedEra(era)}
+                  index={i}
+                />
+              ))}
+              <CustomEraCard
+                isSelected={selectedEra?.id === 'custom'}
+                onClick={() => setSelectedEra({ id: 'custom', label: 'Custom Era' })}
               />
-            ))}
-            <CustomEraCard
-              isSelected={selectedEra?.id === 'custom'}
-              onClick={() => setSelectedEra({ id: 'custom', label: 'Custom Era' })}
-            />
+            </div>
+            {selectedEra?.id === 'custom' && (
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mt-3">
+                <textarea
+                  value={customEraText}
+                  onChange={e => setCustomEraText(e.target.value)}
+                  placeholder="Describe your custom era… e.g. 'A samurai in a neon-lit city, cyberpunk meets feudal Japan'"
+                  className="w-full rounded-xl bg-secondary border border-border text-foreground text-sm placeholder:text-muted-foreground px-4 py-3 focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
+                  rows={3}
+                />
+              </motion.div>
+            )}
           </div>
-          {selectedEra?.id === 'custom' && (
-            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="mt-3">
-              <textarea
-                value={customEraText}
-                onChange={e => setCustomEraText(e.target.value)}
-                placeholder="Describe your custom era… e.g. 'A samurai in a neon-lit city, cyberpunk meets feudal Japan'"
-                className="w-full rounded-xl bg-secondary border border-border text-foreground text-sm placeholder:text-muted-foreground px-4 py-3 focus:outline-none focus:ring-1 focus:ring-primary/50 resize-none"
-                rows={3}
-              />
-            </motion.div>
-          )}
-        </div>
+        )}
 
         {/* Error */}
         {error && (
