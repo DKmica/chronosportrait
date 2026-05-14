@@ -91,15 +91,15 @@ export default function DailyChallenge({ profile, onProfileUpdate }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1.5 mb-1">
               <Trophy className="w-3.5 h-3.5 text-primary" />
-              <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Daily Challenge</span>
+              <span className="text-xs font-bold text-primary uppercase tracking-wider">Daily Challenge</span>
               {completedToday && (
-                <span className="text-[10px] font-bold text-green-400 uppercase tracking-wider ml-1">✓ Done!</span>
+                <span className="text-xs font-bold text-green-400 uppercase tracking-wider ml-1">✓ Done!</span>
               )}
             </div>
             <p className="text-sm font-semibold text-foreground leading-snug">{challenge.text}</p>
             <div className="flex items-center gap-1.5 mt-2">
               <Flame className="w-3.5 h-3.5 text-orange-400" />
-              <span className="text-xs text-muted-foreground">
+              <span className="text-sm text-muted-foreground">
                 {streak > 0 ? `${streak}-day streak — ` : ''}{streakReward}
               </span>
             </div>
@@ -126,7 +126,7 @@ export default function DailyChallenge({ profile, onProfileUpdate }) {
             <div className="px-4 pb-4 space-y-4 border-t border-primary/20 pt-3">
               {/* 7-day calendar */}
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-2">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2">
                   Last 7 Days
                 </p>
                 <StreakCalendar profile={profile} />
@@ -145,7 +145,7 @@ export default function DailyChallenge({ profile, onProfileUpdate }) {
                     )}
                   </div>
                 </div>
-                <p className="text-xs text-muted-foreground mb-3">
+                <p className="text-sm text-muted-foreground mb-3">
                   Protects your streak if you miss a day. Each freeze costs {FREEZE_COST} credits.
                 </p>
 

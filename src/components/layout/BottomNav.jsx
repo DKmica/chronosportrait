@@ -45,7 +45,7 @@ export default function BottomNav() {
                 }`}
               />
               <span
-                className={`text-xs font-medium transition-colors ${
+                className={`text-[11px] font-medium transition-colors ${
                   isActive ? 'text-primary' : 'text-muted-foreground'
                 }`}
               >

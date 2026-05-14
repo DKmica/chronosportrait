@@ -393,7 +393,7 @@ export default function Home() {
         <div className="flex items-center justify-between mb-1">
           <div>
             <h1 className="font-display text-2xl font-bold text-foreground leading-tight">{APP_NAME}</h1>
-            <p className="text-muted-foreground text-xs">{APP_TAGLINE}</p>
+            <p className="text-muted-foreground text-sm">{APP_TAGLINE}</p>
           </div>
           <div className="flex items-center gap-2">
             <CreditsDisplay profile={userProfile} />
@@ -446,10 +446,10 @@ export default function Home() {
         ) : isGroupMode ? (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Group Photos (2–6 people)</p>
+              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Group Photos (2–6 people)</p>
               <span className="text-xs text-muted-foreground">{groupPhotos.length}/6</span>
             </div>
-            <p className="text-xs text-muted-foreground mb-3">Upload one clear photo per person (2–6 people). Use front-facing photos with good lighting. Avoid sunglasses, heavy filters, hats, collages, screenshots, and group photos.</p>
+            <p className="text-sm text-muted-foreground mb-3">Upload one clear photo per person (2–6 people). Use front-facing photos with good lighting. Avoid sunglasses, heavy filters, hats, collages, screenshots, and group photos.</p>
             <GroupPhotoUploader
               photos={groupPhotos}
               onAdd={handleGroupAdd}
@@ -460,7 +460,7 @@ export default function Home() {
           </div>
         ) : (
           <div>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+            <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               {isKidsMode ? "Child's Photo" : isPetMode ? "Pet's Photo" : 'Your Photo'}
             </p>
             <PhotoUploader
@@ -504,7 +504,7 @@ export default function Home() {
         {!isKidsMode && !isPetMode && (
           <div>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Choose Your Era</p>
+              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Choose Your Era</p>
               <button onClick={() => navigate('/era-pack')} className="text-xs text-primary font-semibold flex items-center gap-1">
                 Era Packs <ChevronRight className="w-3.5 h-3.5" />
               </button>

@@ -11,6 +11,26 @@ import { initAdMob } from '@/lib/admob';
 import AppLayout from '@/components/layout/AppLayout';
 import Home from '@/pages/Home.jsx';
 
+// Sync theme with system prefers-color-scheme
+function ThemeManager() {
+  useEffect(() => {
+    const root = document.documentElement;
+    const apply = (dark) => {
+      if (dark) {
+        root.classList.add('dark');
+      } else {
+        root.classList.remove('dark');
+      }
+    };
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    apply(mq.matches);
+    const handler = (e) => apply(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+  return null;
+}
+
 // Lazy load page components
 const Result = lazy(() => import('@/pages/Result.jsx'));
 const Gallery = lazy(() => import('@/pages/Gallery.jsx'));
@@ -91,6 +111,7 @@ function App() {
     <AuthProvider>
       <NavigationProvider>
         <QueryClientProvider client={queryClientInstance}>
+          <ThemeManager />
           <Router>
             <AuthenticatedApp />
           </Router>
