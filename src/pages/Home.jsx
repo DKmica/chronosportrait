@@ -116,21 +116,30 @@ export default function Home() {
 
   const handleShareForBonus = async () => {
     const shareText = 'Check out my historical portrait made with Chronos Booth! 🎨 Step into another era at ChronosBooth';
+    let shared = false;
     try {
       if (navigator.share) {
         await navigator.share({ title: 'Chronos Booth', text: shareText });
-      } else {
-        await navigator.clipboard.writeText(shareText);
-        alert('Link copied! Share it to earn a bonus transformation.');
-      }
-      // Award the bonus
-      if (userProfile) {
-        await addBonusTransformation(userProfile, 1);
-        const updated = await getOrCreateProfile(user.email);
-        setUserProfile(updated);
+        shared = true;
       }
     } catch (e) {
-      // User cancelled share — no bonus
+      // Share dialog cancelled or failed — try clipboard fallback
+    }
+    if (!shared) {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        alert('Link copied! Share it to earn a bonus transformation.');
+        shared = true;
+      } catch (e) {
+        alert('Share this app with your friends to earn bonus transformations!');
+        shared = true;
+      }
+    }
+    // Award the bonus whenever the user attempted to share
+    if (shared && userProfile) {
+      await addBonusTransformation(userProfile, 1);
+      const updated = await getOrCreateProfile(user.email);
+      setUserProfile(updated);
     }
   };
   const isPartnersMode = selectedMode === 'partners';
