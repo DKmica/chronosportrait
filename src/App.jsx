@@ -47,6 +47,7 @@ const Admin = lazy(() => import('@/pages/Admin.jsx'));
 const StyleLora = lazy(() => import('@/pages/StyleLora.jsx'));
 const Support = lazy(() => import('@/pages/Support'));
 const DeleteAccount = lazy(() => import('@/pages/DeleteAccount'));
+const Privacy = lazy(() => import('@/pages/Privacy'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -98,6 +99,7 @@ const AuthenticatedApp = () => {
           <Route path="/style-lora" element={<StyleLora />} />
           <Route path="/support" element={<Support />} />
           <Route path="/delete-account" element={<DeleteAccount />} />
+          <Route path="/privacy" element={<Privacy />} />
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>

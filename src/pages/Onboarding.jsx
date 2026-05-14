@@ -139,6 +139,10 @@ export default function Onboarding() {
                     {tip}
                   </p>
                 ))}
+                <p className="text-xs text-muted-foreground pt-1 border-t border-border/50 mt-1">
+                  Photos are only used to generate your portrait.{' '}
+                  <a href="/privacy" className="text-primary underline">Privacy Policy</a>
+                </p>
               </div>
             )}
           </motion.div>

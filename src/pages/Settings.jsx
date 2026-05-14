@@ -314,7 +314,8 @@ export default function Settings() {
               <h3 className="font-display text-sm font-semibold text-muted-foreground uppercase tracking-wider">About</h3>
             </div>
             {[
-              { icon: Shield, label: 'Privacy & Terms', action: () => navigate('/legal') },
+              { icon: Shield, label: 'Privacy Policy', action: () => navigate('/privacy') },
+              { icon: Shield, label: 'Terms of Service', action: () => navigate('/legal') },
               { icon: HelpCircle, label: 'Help & Support', action: () => navigate('/support') },
               { icon: Star, label: 'Rate the App', action: () => window.open('https://play.google.com/store/apps/details?id=com.chronosbooth.app', '_blank') },
               { icon: UserX, label: 'Delete My Account', action: () => navigate('/delete-account') },

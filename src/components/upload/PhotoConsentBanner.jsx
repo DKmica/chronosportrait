@@ -37,7 +37,7 @@ export default function PhotoConsentBanner() {
             <p className="text-sm text-muted-foreground leading-relaxed">
               Photos you upload are used only to generate your AI portrait. We never sell or share
               your images. By uploading you agree to our{' '}
-              <a href="/legal" className="text-primary underline">Privacy Policy</a>.
+              <a href="/privacy" className="text-primary underline">Privacy Policy</a>.
             </p>
           </div>
           <button onClick={handleAccept} className="p-1 -mt-0.5 -mr-1 flex-shrink-0">

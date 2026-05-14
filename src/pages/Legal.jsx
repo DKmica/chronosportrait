@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 
 const TABS = ['Privacy Policy', 'Terms of Service'];
@@ -110,6 +110,13 @@ export default function Legal() {
         </div>
       </div>
 
+      {tab === 0 && (
+        <div className="px-5 mb-4">
+          <Link to="/privacy" className="text-sm text-primary underline underline-offset-2">
+            View full Privacy Policy →
+          </Link>
+        </div>
+      )}
       <div className="px-5 pb-12 space-y-1">
         {renderMarkdown(tab === 0 ? PRIVACY : TERMS)}
       </div>
