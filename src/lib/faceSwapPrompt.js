@@ -29,7 +29,7 @@ function getLayoutInstruction(personCount) {
 function buildPersonMap(personCount) {
   const lines = [];
   for (let i = 1; i <= personCount; i++) {
-    lines.push(`Person ${i} = Reference Image ${i} (uploaded photo #${i})`);
+    lines.push(`- Person ${i} = the face in "PERSON ${i} OF ${personCount}" reference image`);
   }
   return lines.join('\n');
 }

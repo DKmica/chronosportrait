@@ -74,15 +74,19 @@ async function generateMultiPerson(base44, allPhotoUrls, prompt) {
 
   const images = await Promise.all(allPhotoUrls.map(url => imageUrlToBase64(url)));
 
-  // Build parts: interleave label + image for each person
+  // Build parts: prepend a summary, then interleave label + image for each person
   const parts = [];
+
+  // Opening declaration so Gemini immediately knows total count
+  parts.push({ text: `I am uploading exactly ${personCount} reference photo${personCount === 1 ? '' : 's'} below, one per person. Each person must appear exactly once in the output.\n` });
+
   for (let i = 0; i < images.length; i++) {
-    parts.push({ text: `Reference Image ${i + 1} — Person ${i + 1}:` });
+    parts.push({ text: `--- PERSON ${i + 1} OF ${personCount} (Reference Image ${i + 1}) ---` });
     parts.push({ inlineData: { mimeType: images[i].mimeType, data: images[i].base64 } });
   }
 
-  // Add the main prompt
-  parts.push({ text: prompt });
+  // Closing separator then the main prompt
+  parts.push({ text: `--- END OF REFERENCE IMAGES (${personCount} total) ---\n\n${prompt}` });
 
   console.log(`[generate] Calling Gemini with ${personCount} person(s)...`);
   const result = await callGemini(parts);
