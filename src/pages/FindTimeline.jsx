@@ -5,6 +5,7 @@ import { Sparkles, ArrowLeft, Zap, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import PhotoUploader from '@/components/transform/PhotoUploader';
+import { buildFaceSwapPrompt } from '@/lib/faceSwapPrompt';
 
 const ERA_RESULTS = [
   {
@@ -100,9 +101,13 @@ export default function FindTimeline() {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState(null);
+  const [uploadedUrl, setUploadedUrl] = useState(null);
 
   const handlePhotoSelect = (file) => {
     setPhoto(file);
+    setUploadedUrl(null);
     const reader = new FileReader();
     reader.onload = (e) => setPhotoPreview(e.target.result);
     reader.readAsDataURL(file);
@@ -139,6 +144,8 @@ Be dramatic and poetic. Make the user feel the result is uniquely personal.`,
 
     const matched = ERA_RESULTS.find((e) => e.id === response.era_id) || pickEra();
     setResult({ ...matched, aiReason: response.reason, confidence: response.confidence });
+    // Cache the uploaded URL so we don't re-upload during generation
+    setUploadedUrl(file_url);
     setAnalyzing(false);
   };
 
@@ -153,8 +160,55 @@ Be dramatic and poetic. Make the user feel the result is uniquely personal.`,
     }
   };
 
-  const handleTransformNow = () => {
-    navigate(`/?era=${result.id}`);
+  const handleTransformNow = async () => {
+    if (!result) return;
+    setGenerating(true);
+    setGenerateError(null);
+    try {
+      // Use the already-uploaded URL from analysis, or upload now if missing
+      let photoUrl = uploadedUrl;
+      if (!photoUrl && photo) {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file: photo });
+        photoUrl = file_url;
+        setUploadedUrl(file_url);
+      }
+      if (!photoUrl) throw new Error('No photo available. Please re-upload.');
+
+      // Build prompt using the matched era label
+      const eraPrompt = result.era;
+      const prompt = buildFaceSwapPrompt(eraPrompt, result.era);
+
+      // Create DB record
+      const transformation = await base44.entities.Transformation.create({
+        original_photo_url: photoUrl,
+        era: result.id,
+        era_label: result.era,
+        status: 'processing',
+      });
+
+      // Call AI generation
+      const response = await base44.functions.invoke('transformPhoto', {
+        prompt,
+        original_photo_url: photoUrl,
+        extra_photo_urls: [],
+        transformation_id: transformation.id,
+      });
+
+      if (response.data?.error) {
+        await base44.entities.Transformation.update(transformation.id, { status: 'failed' });
+        throw new Error(response.data.error);
+      }
+
+      await base44.entities.Transformation.update(transformation.id, {
+        transformed_photo_url: response.data.url,
+        status: 'completed',
+      });
+
+      navigate(`/result/${transformation.id}`);
+    } catch (err) {
+      setGenerateError(err.message || 'Generation failed. Please try again.');
+      setGenerating(false);
+    }
   };
 
   return (
@@ -280,12 +334,27 @@ Be dramatic and poetic. Make the user feel the result is uniquely personal.`,
             )}
 
             {/* CTAs */}
+            {generateError && (
+              <div className="rounded-xl bg-destructive/10 border border-destructive/30 px-4 py-3 text-sm text-destructive">
+                {generateError}
+              </div>
+            )}
             <Button
               onClick={handleTransformNow}
-              className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base gap-2"
+              disabled={generating}
+              className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base gap-2 disabled:opacity-50"
             >
-              <Sparkles className="w-5 h-5" />
-              Generate My {result.era} Portrait
+              {generating ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
+                  Generating your portrait…
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-5 h-5" />
+                  Generate My {result.era} Portrait
+                </>
+              )}
             </Button>
 
             <div className="flex gap-3">
