@@ -270,12 +270,6 @@ export default function Home() {
           </div>
         )}
 
-        {/* Style selector */}
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Transformation Style</p>
-          <StyleSelector value={selectedStyle} onChange={setSelectedStyle} />
-        </div>
-
         {/* Era grid */}
         <div>
           <div className="flex items-center justify-between mb-3">
