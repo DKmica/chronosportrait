@@ -19,14 +19,12 @@ import AdGateModal from '@/components/transform/AdGateModal';
 import { getOrCreateProfile, getRemainingToday, consumeTransformation } from '@/lib/usageLimit';
 import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt, buildKidsPrompt, buildPetPrompt } from '@/lib/faceSwapPrompt';
 
-const GENERATED_IMAGE_PATTERNS = ['generated_image', 'chronos-booth', 'ai-generated'];
+// Only flag clearly AI-generated filenames — avoid false positives on normal uploads
+const GENERATED_FILENAME_PATTERNS = ['generated_image', 'ai-generated'];
 function looksLikeGeneratedImage(url) {
   if (!url) return false;
-  const filename = url.split('/').pop().toLowerCase();
-  return GENERATED_IMAGE_PATTERNS.some(p => filename.includes(p)) ||
-    filename.startsWith('output.') ||
-    filename.startsWith('result.') ||
-    filename.startsWith('transformed.');
+  const filename = url.split('/').pop().toLowerCase().split('?')[0];
+  return GENERATED_FILENAME_PATTERNS.some(p => filename.includes(p));
 }
 
 const FREE_DAILY_LIMIT = 3;
@@ -315,7 +313,11 @@ export default function Home() {
 
       navigate(`/result/${transformation.id}`);
     } catch (err) {
-      setError(err.message || 'Transformation failed. Please try again.');
+      let msg = err.message || 'Transformation failed. Please try again.';
+      if (msg.includes('400') || msg.toLowerCase().includes('request failed')) {
+        msg = 'Generation request failed. Please try again with clear, original face photos. Avoid screenshots, collages, generated images, or group photos.';
+      }
+      setError(msg);
       setIsTransforming(false);
       setTransformStep(0);
     }

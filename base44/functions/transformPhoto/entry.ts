@@ -96,19 +96,14 @@ async function generateMultiPerson(base44, allPhotoUrls, prompt) {
 }
 
 // ── Generated image URL detector ──────────────────────────────────────────
+// Only flag URLs that are clearly prior AI-generated outputs, not user uploads.
+// We check the filename only (after the last '/') to avoid false positives on URL path segments.
+const GENERATED_FILENAME_PATTERNS = ['generated_image', 'ai-generated'];
 
-const GENERATED_IMAGE_PATTERNS = [
-  'generated_image', 'chronos-booth', 'ai-generated',
-];
-
-// Check only the filename portion (after last slash) to avoid false positives on path segments
 function looksLikeGeneratedImage(url) {
   if (!url) return false;
-  const filename = url.split('/').pop().toLowerCase();
-  return GENERATED_IMAGE_PATTERNS.some(p => filename.includes(p)) ||
-    filename.startsWith('output.') ||
-    filename.startsWith('result.') ||
-    filename.startsWith('transformed.');
+  const filename = url.split('/').pop().toLowerCase().split('?')[0]; // strip query params too
+  return GENERATED_FILENAME_PATTERNS.some(p => filename.includes(p));
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────
