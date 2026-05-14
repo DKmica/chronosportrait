@@ -29,6 +29,7 @@ export default function Settings() {
   const [isAuthenticated, setIsAuthenticated] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
+  const [upgrading, setUpgrading] = useState(false);
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -51,6 +52,28 @@ export default function Settings() {
 
   const handleLogin = () => base44.auth.redirectToLogin(window.location.href);
   const handleLogout = () => base44.auth.logout(window.location.href);
+
+  const handleUpgrade = async () => {
+    // Block checkout from within an iframe (must be from published app)
+    if (window.self !== window.top) {
+      alert('Checkout is only available from the published app. Please open the app directly.');
+      return;
+    }
+    setUpgrading(true);
+    try {
+      const res = await base44.functions.invoke('createCheckoutSession', {
+        success_url: `${window.location.origin}/settings?upgraded=true`,
+        cancel_url: `${window.location.origin}/settings`,
+      });
+      if (res.data?.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (err) {
+      console.error('Upgrade error:', err);
+    } finally {
+      setUpgrading(false);
+    }
+  };
   
   const handleDeleteAccount = async () => {
     setDeleting(true);
@@ -211,9 +234,13 @@ export default function Settings() {
                         </li>
                       ))}
                     </ul>
-                    <Button className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2 text-sm font-semibold">
+                    <Button
+                      onClick={handleUpgrade}
+                      disabled={upgrading}
+                      className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2 text-sm font-semibold disabled:opacity-60"
+                    >
                       <Crown className="w-4 h-4" />
-                      Upgrade to Pro
+                      {upgrading ? 'Redirecting...' : 'Upgrade to Pro — $9.99/mo'}
                     </Button>
                   </div>
                 </div>
