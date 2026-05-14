@@ -30,6 +30,7 @@ export default function Settings() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
   const [upgrading, setUpgrading] = useState(false);
+  const [selectedBillingPlan, setSelectedBillingPlan] = useState('pro_monthly');
 
   const { data: user } = useQuery({
     queryKey: ['me'],
@@ -53,7 +54,7 @@ export default function Settings() {
   const handleLogin = () => base44.auth.redirectToLogin(window.location.href);
   const handleLogout = () => base44.auth.logout(window.location.href);
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = async (plan = selectedBillingPlan) => {
     // Block checkout from within an iframe (must be from published app)
     if (window.self !== window.top) {
       alert('Checkout is only available from the published app. Please open the app directly.');
@@ -64,6 +65,7 @@ export default function Settings() {
       const res = await base44.functions.invoke('createCheckoutSession', {
         success_url: `${window.location.origin}/settings?upgraded=true`,
         cancel_url: `${window.location.origin}/settings`,
+        plan,
       });
       if (res.data?.url) {
         window.location.href = res.data.url;
@@ -234,13 +236,29 @@ export default function Settings() {
                         </li>
                       ))}
                     </ul>
+                    {/* Billing toggle */}
+                    <div className="flex gap-2 mb-3">
+                      <button
+                        onClick={() => setSelectedBillingPlan('pro_monthly')}
+                        className={`flex-1 rounded-xl border py-2 text-xs font-semibold transition-colors ${selectedBillingPlan === 'pro_monthly' ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:border-primary/50'}`}
+                      >
+                        Monthly<br /><span className="font-bold text-sm">$7.99</span>
+                      </button>
+                      <button
+                        onClick={() => setSelectedBillingPlan('pro_yearly')}
+                        className={`flex-1 rounded-xl border py-2 text-xs font-semibold transition-colors relative ${selectedBillingPlan === 'pro_yearly' ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:border-primary/50'}`}
+                      >
+                        <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap">Save 58%</span>
+                        Yearly<br /><span className="font-bold text-sm">$39.99</span>
+                      </button>
+                    </div>
                     <Button
-                      onClick={handleUpgrade}
+                      onClick={() => handleUpgrade(selectedBillingPlan)}
                       disabled={upgrading}
                       className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2 text-sm font-semibold disabled:opacity-60"
                     >
                       <Crown className="w-4 h-4" />
-                      {upgrading ? 'Redirecting...' : 'Upgrade to Pro — $9.99/mo'}
+                      {upgrading ? 'Redirecting...' : `Upgrade to Pro — ${selectedBillingPlan === 'pro_yearly' ? '$39.99/yr' : '$7.99/mo'}`}
                     </Button>
                   </div>
                 </div>

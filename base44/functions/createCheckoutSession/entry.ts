@@ -2,7 +2,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 import Stripe from 'npm:stripe@14.21.0';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
-const PRO_PRICE_ID = 'price_1TWqKiE9ea3XI86gAYkxVZBZ';
+
+const PRICE_IDS = {
+  pro_monthly: 'price_1TWrqeE9ea3XI86gpmSrvcPg',
+  pro_yearly: 'price_1TWrqgE9ea3XI86gTz4cyad4',
+};
 
 Deno.serve(async (req) => {
   try {
@@ -13,12 +17,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { success_url, cancel_url } = await req.json();
+    const { success_url, cancel_url, plan = 'pro_monthly' } = await req.json();
+    const priceId = PRICE_IDS[plan] || PRICE_IDS.pro_monthly;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
-      line_items: [{ price: PRO_PRICE_ID, quantity: 1 }],
+      line_items: [{ price: priceId, quantity: 1 }],
       success_url: success_url || `${req.headers.get('origin')}/settings?upgraded=true`,
       cancel_url: cancel_url || `${req.headers.get('origin')}/settings`,
       customer_email: user.email,
