@@ -346,9 +346,9 @@ export default function Home() {
 
       {/* Ad gate modal */}
       <AdGateModal
-        isOpen={!!adGateMode}
+        open={!!adGateMode}
+        onOpenChange={(v) => { if (!v) setAdGateMode(null); }}
         modeName={SPECIAL_MODES.find(m => m.id === adGateMode)?.label || ''}
-        onClose={() => setAdGateMode(null)}
         onUnlocked={() => { setSelectedMode(adGateMode); setAdGateMode(null); }}
       />
     </div>
