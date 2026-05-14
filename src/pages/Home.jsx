@@ -16,7 +16,7 @@ import ScenarioSelector from '@/components/transform/ScenarioSelector';
 import GroupPhotoUploader from '@/components/transform/GroupPhotoUploader';
 import LimitBanner from '@/components/transform/LimitBanner';
 import AdGateModal from '@/components/transform/AdGateModal';
-import { getOrCreateProfile, getRemainingToday, consumeTransformation } from '@/lib/usageLimit';
+import { getOrCreateProfile, getRemainingToday, consumeTransformation, addBonusTransformation } from '@/lib/usageLimit';
 import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt, buildKidsPrompt, buildPetPrompt } from '@/lib/faceSwapPrompt';
 
 // Only flag clearly AI-generated filenames — avoid false positives on normal uploads
@@ -112,6 +112,26 @@ export default function Home() {
   }, []);
 
   const remaining = userProfile ? getRemainingToday(userProfile) : FREE_DAILY_LIMIT;
+
+  const handleShareForBonus = async () => {
+    const shareText = 'Check out my historical portrait made with Chronos Booth! 🎨 Step into another era at ChronosBooth';
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Chronos Booth', text: shareText });
+      } else {
+        await navigator.clipboard.writeText(shareText);
+        alert('Link copied! Share it to earn a bonus transformation.');
+      }
+      // Award the bonus
+      if (userProfile) {
+        await addBonusTransformation(userProfile, 1);
+        const updated = await getOrCreateProfile(user.email);
+        setUserProfile(updated);
+      }
+    } catch (e) {
+      // User cancelled share — no bonus
+    }
+  };
   const isPartnersMode = selectedMode === 'partners';
   const isKidsMode = selectedMode === 'kids';
   const isPetMode = selectedMode === 'pet';
@@ -343,7 +363,7 @@ export default function Home() {
 
       {/* Limit banner */}
       <div className="px-5 mb-3">
-        <LimitBanner remaining={remaining} timeUntilReset={timeUntilReset} profile={userProfile} />
+        <LimitBanner remaining={remaining} timeUntilReset={timeUntilReset} profile={userProfile} onShareForBonus={handleShareForBonus} />
       </div>
 
       {/* Special mode bar */}
