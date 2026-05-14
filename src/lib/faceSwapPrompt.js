@@ -49,65 +49,59 @@ function buildPersonMap(personCount) {
 export function buildPrompt({ personCount, eraLabel, eraPrompt = '', extraContext = '', isRetry = false }) {
   const personMap = buildPersonMap(personCount);
   const layoutInstruction = getLayoutInstruction(personCount);
-  const isSolo = personCount === 1;
-  const personWord = isSolo ? 'person' : 'people';
 
-  const retryBlock = isRetry
-    ? `\nRETRY NOTICE: The previous generation may have missed or changed a face. This retry must strictly include all ${personCount} uploaded ${personWord} exactly once, with every face fully visible and recognizable.\n`
+  const retryPrefix = isRetry
+    ? `RETRY NOTICE: The previous generation may have missed or changed a face. This retry must strictly include all ${personCount} uploaded ${personCount === 1 ? 'person' : 'people'} exactly once, with every face fully visible and recognizable.\n\n`
     : '';
 
-  return `You are creating a cinematic AI transformation portrait from uploaded reference images.
-${retryBlock}
-CRITICAL IDENTITY LOCK:
-There are exactly ${personCount} real ${personWord} provided as reference images.
-The final image must contain exactly ${personCount} ${personWord} total.
-Use every uploaded person exactly once.
-Do not omit anyone.
-Do not add extra people.
-Do not duplicate any person.
-Do not merge two people into one face.
-Do not swap identities between people.
-Do not invent generic replacement faces.
-Do not replace uploaded people with random characters.
+  const extraBlock = extraContext ? `\n${extraContext}\n` : '';
+  const eraPromptBlock = eraPrompt ? `\n${eraPrompt}\n` : '';
 
-REFERENCE IMAGE MAP:
+  return `${retryPrefix}Create a cinematic ${eraLabel} portrait using the uploaded reference images.
+
+There are exactly ${personCount} ${personCount === 1 ? 'person' : 'people'}.
+
+REFERENCE MAP:
 ${personMap}
 
-IDENTITY PRESERVATION:
-For each person, preserve their recognizable facial identity from their assigned reference image:
-- facial structure
-- eye shape, nose, mouth, jawline
-- skin tone and age range
-- hairstyle (or closest era-appropriate version)
-- facial hair and unique recognizable features
-- overall likeness
+Use every uploaded person exactly once.
+The final image must contain exactly ${personCount} ${personCount === 1 ? 'person' : 'people'} total.
+Do not add extra people.
+Do not omit anyone.
+Do not duplicate anyone.
+Do not merge faces.
+Do not swap identities.
+Do not replace anyone with a generic face.
 
-Facial likeness is the highest priority. Era, costume, background, and style are secondary.
-${extraContext ? `\n${extraContext}\n` : ''}
-SCENE:
-Transform all uploaded ${personWord} into this era/scenario: ${eraLabel}
-${eraPrompt ? `\n${eraPrompt}\n` : ''}
-COMPOSITION:
+Preserve each person's recognizable identity from their assigned reference image:
+face shape, eyes, nose, mouth, jawline, skin tone, age range, hairstyle, facial hair, and unique features.
+${extraBlock}
+Composition:
 ${layoutInstruction}
 
-Every person must be visible from at least the chest up.
-Every face must be sharp, centered, unobstructed, well-lit, and recognizable.
-No face may be hidden by another person, hats, helmets, masks, shadows, smoke, hair, hands, props, weapons, or cropping.
-No profile-only faces. No turned-away faces. No blurred faces. No background extras.
+Every face must be fully visible, sharp, well-lit, and recognizable.
+No face may be covered by hats, helmets, masks, shadows, hair, hands, smoke, props, weapons, or another person.
+No one should be turned away, hidden, cropped, blurred, or placed far in the background.
 
-STYLE:
-Cinematic realism. Professional studio-quality ${isSolo ? 'portrait' : 'group portrait'}.
-High-resolution. Sharp facial detail. Realistic skin texture.
-Era-accurate clothing and setting.
-No text, watermark, captions, logos, or UI elements.
+Dress everyone in authentic ${eraLabel} clothing.${eraPromptBlock}
+The clothing, setting, lighting, and props should match the era, but facial likeness is the highest priority.
 
-NEGATIVE RULES:
-Do not create fewer than ${personCount} ${personWord}.
-Do not create more than ${personCount} ${personWord}.
-Do not hide, crop, blur, duplicate, or merge any person.
-Do not swap identities. Do not dramatically change ages.
-Do not over-beautify people until they are unrecognizable.
-Do not create generic faces.`.trim();
+Style:
+Cinematic realism, professional lighting, high-resolution, sharp facial detail, realistic skin texture, polished movie-poster quality.
+
+Negative instructions:
+No missing people.
+No extra people.
+No duplicated people.
+No merged faces.
+No identity swaps.
+No generic faces.
+No hidden faces.
+No cropped faces.
+No profile-only faces.
+No blurry faces.
+No distorted faces.
+No text or watermark.`.trim();
 }
 
 // ── Convenience wrappers ────────────────────────────────────────────────────
