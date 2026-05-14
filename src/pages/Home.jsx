@@ -17,7 +17,7 @@ import GroupPhotoUploader from '@/components/transform/GroupPhotoUploader';
 import LimitBanner from '@/components/transform/LimitBanner';
 import AdGateModal from '@/components/transform/AdGateModal';
 import { getOrCreateProfile, getRemainingToday, consumeTransformation } from '@/lib/usageLimit';
-import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt } from '@/lib/faceSwapPrompt';
+import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt, buildKidsPrompt, buildPetPrompt } from '@/lib/faceSwapPrompt';
 
 const FREE_DAILY_LIMIT = 3;
 
@@ -136,7 +136,7 @@ export default function Home() {
   };
 
   const handleGroupAdd = (file, preview) => {
-    if (groupPhotos.length >= 5) return;
+    if (groupPhotos.length >= 6) return;
     setGroupPhotos(prev => [...prev, { file, preview, url: null }]);
   };
 
@@ -169,13 +169,12 @@ export default function Home() {
       if (isGroupMode) {
         // Upload all group photos
         const uploaded = await Promise.all(
-          groupPhotos.map(async (p, i) => {
+          groupPhotos.map(async (p) => {
             if (p.url) return p.url;
             const { file_url } = await base44.integrations.Core.UploadFile({ file: p.file });
             return file_url;
           })
         );
-        // Update cached urls
         setGroupPhotos(prev => prev.map((p, i) => ({ ...p, url: uploaded[i] })));
         uploadedUrl = uploaded[0];
         extraUrls = uploaded.slice(1);
@@ -213,43 +212,43 @@ export default function Home() {
       if (isPartnersMode) {
         const baseEraPrompt = selectedEra?.id === 'custom' ? customEraText : selectedEra?.prompt;
         const resolvedVibe = relationshipVibe === 'custom' ? (customRelationshipVibe || 'partners') : relationshipVibe;
+        eraId = selectedEra?.id === 'custom' ? 'custom' : selectedEra?.id;
+        eraLabel = selectedEra?.label || 'Selected Era';
         finalPrompt = buildPartnersPrompt({
           eraPrompt: baseEraPrompt,
+          eraLabel,
           relationshipVibe: resolvedVibe,
           styleA: styleA === 'custom' ? '' : styleA,
           styleB: styleB === 'custom' ? '' : styleB,
           customStyleA: styleA === 'custom' ? customStyleA : '',
           customStyleB: styleB === 'custom' ? customStyleB : '',
-          styleSuffix: stylePrompt,
         });
-        eraId = selectedEra?.id === 'custom' ? 'custom' : selectedEra?.id;
-        eraLabel = selectedEra?.label;
       } else if (isKidsMode) {
         const scenario = selectedKidScenario;
         const scenarioPrompt = scenario.id === 'custom' ? customKidText : scenario.prompt;
-        finalPrompt = `CRITICAL IDENTITY-PRESERVATION: This is a child. Copy the child's face EXACTLY from the reference photo — face shape, skin tone, eye color, age. ONLY change clothing, background, and accessories.\n\n${scenarioPrompt}\n\nChild-safe, whimsical, colorful, photorealistic, 8K.`;
         eraId = `kids_${scenario.id}`;
         eraLabel = scenario.label;
+        finalPrompt = buildKidsPrompt({ scenarioPrompt, scenarioLabel: scenario.label });
       } else if (isPetMode) {
         const scenario = selectedPetScenario;
         const scenarioPrompt = scenario.id === 'custom' ? customPetText : scenario.prompt;
-        finalPrompt = `CRITICAL: This is a pet animal. Preserve this specific animal's appearance — breed, color, fur/feather pattern, size, and markings. Only change attire, accessories, and background.\n\n${scenarioPrompt}\n\nDetailed, photorealistic, 8K.`;
         eraId = `pet_${scenario.id}`;
         eraLabel = scenario.label;
+        finalPrompt = buildPetPrompt({ scenarioPrompt, scenarioLabel: scenario.label });
       } else if (isGroupMode) {
         const baseEraPrompt = selectedEra?.id === 'custom' ? customEraText : selectedEra?.prompt;
-        finalPrompt = buildGroupPrompt({ eraPrompt: baseEraPrompt, count: groupPhotos.length, styleSuffix: stylePrompt });
         eraId = selectedEra?.id === 'custom' ? 'custom' : selectedEra?.id;
-        eraLabel = selectedEra?.label;
+        eraLabel = selectedEra?.label || 'Selected Era';
+        finalPrompt = buildGroupPrompt({ eraPrompt: baseEraPrompt, eraLabel, count: groupPhotos.length });
       } else {
         const baseEraPrompt = selectedEra?.id === 'custom' ? customEraText : selectedEra?.prompt;
         const selectedModeConfig = SPECIAL_MODES.find(mode => mode.id === selectedMode);
         const eraPrompt = selectedModeConfig?.promptPrefix
           ? `${selectedModeConfig.promptPrefix}${baseEraPrompt}`
           : baseEraPrompt;
-        finalPrompt = buildFaceSwapPrompt(eraPrompt, stylePrompt);
         eraId = selectedEra?.id === 'custom' ? 'custom' : selectedEra?.id;
         eraLabel = selectedEra?.id === 'custom' ? (customEraText.slice(0, 30) || 'Custom Era') : selectedEra?.label;
+        finalPrompt = buildFaceSwapPrompt(eraPrompt);
       }
 
       // Step 3: Create DB record
@@ -334,14 +333,15 @@ export default function Home() {
         ) : isGroupMode ? (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Group Photos (2–5 people)</p>
-              <span className="text-xs text-muted-foreground">{groupPhotos.length}/5</span>
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Group Photos (2–6 people)</p>
+              <span className="text-xs text-muted-foreground">{groupPhotos.length}/6</span>
             </div>
+            <p className="text-xs text-muted-foreground mb-3">Upload 3–6 clear face photos. For best results, use one person per photo, front-facing, good lighting, no sunglasses, no heavy filters.</p>
             <GroupPhotoUploader
               photos={groupPhotos}
               onAdd={handleGroupAdd}
               onRemove={handleGroupRemove}
-              maxPhotos={5}
+              maxPhotos={6}
             />
           </div>
         ) : (

@@ -4,12 +4,13 @@ const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 const GEMINI_MODEL = 'gemini-2.5-flash-image';
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
+const MAX_PEOPLE = 6;
+
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-// Fetch an image URL and convert to base64
 async function imageUrlToBase64(url) {
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch image from URL (${res.status}): ${url.slice(0, 80)}`);
+  if (!res.ok) throw new Error(`Failed to fetch image (${res.status}): ${url.slice(0, 80)}`);
   const buffer = await res.arrayBuffer();
   const bytes = new Uint8Array(buffer);
   let binary = '';
@@ -20,7 +21,6 @@ async function imageUrlToBase64(url) {
   };
 }
 
-// Call Gemini image generation with multipart content
 async function callGemini(parts) {
   const res = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
     method: 'POST',
@@ -47,7 +47,6 @@ async function callGemini(parts) {
   throw new Error(`No image in Gemini response: ${text.slice(0, 300)}`);
 }
 
-// Upload base64 image as a hosted URL via Base44 UploadFile integration
 async function uploadBase64AsUrl(base44, base64Data, mimeType) {
   const binaryStr = atob(base64Data);
   const bytes = new Uint8Array(binaryStr.length);
@@ -59,65 +58,41 @@ async function uploadBase64AsUrl(base44, base64Data, mimeType) {
   return result?.file_url;
 }
 
-// ── Solo transformation ────────────────────────────────────────────────────
-async function generateSolo(base44, original_photo_url, prompt) {
-  console.log('[solo] Fetching reference image...');
-  const { base64, mimeType } = await imageUrlToBase64(original_photo_url);
-
-  const parts = [
-    { inlineData: { mimeType, data: base64 } },
-    {
-      text: `This is the reference photo of a person. Generate a photorealistic portrait of THIS EXACT PERSON placed in the following scene: ${prompt}.
-
-Identity preservation rules (CRITICAL):
-- The person's face must be pixel-perfect identical to the reference — same bone structure, skin tone, eye color, nose shape, lip shape, hair color and texture.
-- Do NOT beautify, idealize, or alter their face in any way.
-- Only change the clothing, background, and lighting to match the era/scene.
-- Ultra detailed, 8K resolution, sharp focus, cinematic lighting.`,
-    },
-  ];
-
-  console.log('[solo] Calling Gemini...');
-  const result = await callGemini(parts);
-  const url = await uploadBase64AsUrl(base44, result.base64, result.mimeType);
-  if (!url) throw new Error('Failed to upload result');
-  return url;
+function isInvalidUrl(url) {
+  return !url || url.startsWith('blob:') || url.startsWith('data:');
 }
 
-// ── Partners transformation ────────────────────────────────────────────────
-async function generatePartners(base44, original_photo_url, extra_photo_url, prompt) {
-  console.log('[partners] Fetching both reference images...');
-  const [imgA, imgB] = await Promise.all([
-    imageUrlToBase64(original_photo_url),
-    imageUrlToBase64(extra_photo_url),
-  ]);
+// ── Multi-person generation ─────────────────────────────────────────────────
 
-  const parts = [
-    { text: 'Reference image 1 — Person A (first person):' },
-    { inlineData: { mimeType: imgA.mimeType, data: imgA.base64 } },
-    { text: 'Reference image 2 — Person B (second person):' },
-    { inlineData: { mimeType: imgB.mimeType, data: imgB.base64 } },
-    {
-      text: `Generate a single photorealistic image with BOTH Person A and Person B together in this scene: ${prompt}.
+/**
+ * Generates a portrait for 1–6 people using strict identity-preservation logic.
+ * All reference images are passed to Gemini in labeled order.
+ */
+async function generateMultiPerson(base44, allPhotoUrls, prompt) {
+  const personCount = allPhotoUrls.length;
+  console.log(`[generate] Fetching ${personCount} reference image(s)...`);
 
-Identity preservation rules (CRITICAL):
-- Person A's face must be IDENTICAL to Reference image 1 — exact facial structure, skin tone, eye color, hair, and every distinguishing feature.
-- Person B's face must be IDENTICAL to Reference image 2 — exact facial structure, skin tone, eye color, hair, and every distinguishing feature.
-- Do NOT merge their faces, do NOT invent new faces, do NOT show only one person.
-- Both people must be clearly visible with their original identities fully intact.
-- Only change their clothing, background, and lighting to match the scene.
-- Photorealistic, cinematic lighting, ultra detailed, 8K resolution.`,
-    },
-  ];
+  const images = await Promise.all(allPhotoUrls.map(url => imageUrlToBase64(url)));
 
-  console.log('[partners] Calling Gemini...');
+  // Build parts: interleave label + image for each person
+  const parts = [];
+  for (let i = 0; i < images.length; i++) {
+    parts.push({ text: `Reference Image ${i + 1} — Person ${i + 1}:` });
+    parts.push({ inlineData: { mimeType: images[i].mimeType, data: images[i].base64 } });
+  }
+
+  // Add the main prompt
+  parts.push({ text: prompt });
+
+  console.log(`[generate] Calling Gemini with ${personCount} person(s)...`);
   const result = await callGemini(parts);
   const url = await uploadBase64AsUrl(base44, result.base64, result.mimeType);
-  if (!url) throw new Error('Failed to upload result');
+  if (!url) throw new Error('Failed to upload generated image');
   return url;
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────
+
 Deno.serve(async (req) => {
   console.log('transformPhoto invoked');
 
@@ -140,30 +115,44 @@ Deno.serve(async (req) => {
     }
 
     const { prompt, original_photo_url, extra_photo_urls = [] } = body;
-    console.log('Params:', { promptSnippet: prompt?.slice(0, 80), original_photo_url: original_photo_url?.slice(0, 60), extra_count: extra_photo_urls.length });
+    const personCount = 1 + extra_photo_urls.length;
 
+    console.log('Params:', {
+      promptSnippet: prompt?.slice(0, 80),
+      original_photo_url: original_photo_url?.slice(0, 60),
+      extra_count: extra_photo_urls.length,
+      personCount,
+    });
+
+    // Auth
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    if (!original_photo_url) return Response.json({ error: 'original_photo_url is required' }, { status: 400 });
-    if (!prompt) return Response.json({ error: 'prompt is required' }, { status: 400 });
-
-    if (original_photo_url.startsWith('blob:') || original_photo_url.startsWith('data:')) {
-      return Response.json({ error: 'Photo must be uploaded to a hosted URL before calling transformPhoto.' }, { status: 400 });
+    // Validation
+    if (!original_photo_url) {
+      return Response.json({ error: 'original_photo_url is required' }, { status: 400 });
+    }
+    if (!prompt) {
+      return Response.json({ error: 'prompt is required' }, { status: 400 });
+    }
+    if (personCount > MAX_PEOPLE) {
+      return Response.json({
+        error: `Group mode currently supports up to ${MAX_PEOPLE} people for best face accuracy. You uploaded ${personCount}.`,
+      }, { status: 400 });
     }
 
-    const isPartners = extra_photo_urls.length > 0;
-    let url;
-
-    if (isPartners) {
-      const partnerUrl = extra_photo_urls[0];
-      if (partnerUrl.startsWith('blob:') || partnerUrl.startsWith('data:')) {
-        return Response.json({ error: 'Partner photo must be uploaded to a hosted URL.' }, { status: 400 });
+    // Validate all URLs
+    const allUrls = [original_photo_url, ...extra_photo_urls];
+    for (let i = 0; i < allUrls.length; i++) {
+      if (isInvalidUrl(allUrls[i])) {
+        return Response.json({
+          error: `Person ${i + 1}'s photo must be uploaded to a hosted URL before generating. Please re-upload and try again.`,
+        }, { status: 400 });
       }
-      url = await generatePartners(base44, original_photo_url, partnerUrl, prompt);
-    } else {
-      url = await generateSolo(base44, original_photo_url, prompt);
     }
+
+    console.log(`[main] Starting generation for ${personCount} person(s)...`);
+    const url = await generateMultiPerson(base44, allUrls, prompt);
 
     console.log('Transform complete:', url?.slice(0, 60));
     return Response.json({ url });
