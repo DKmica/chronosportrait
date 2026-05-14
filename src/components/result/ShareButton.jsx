@@ -53,8 +53,8 @@ export default function ShareButton({ transformation }) {
   const [saved, setSaved] = useState(false);
 
   const imageUrl = transformation.transformed_photo_url;
-  const title = `My ${transformation.era_label} portrait — Chronos Booth`;
-  const filename = `chronos-booth-${transformation.era_label?.toLowerCase().replace(/\s+/g, '-')}.jpg`;
+  const title = `My ${transformation.era_label} portrait — ChronosBooth`;
+  const filename = `chronosbooth-${transformation.era_label?.toLowerCase().replace(/\s+/g, '-')}.jpg`;
 
   const handleDownload = async () => {
     setLoading('download');

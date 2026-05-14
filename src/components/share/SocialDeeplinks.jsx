@@ -31,7 +31,7 @@ export default function SocialDeeplinks({ transformation }) {
         ctx.fillStyle = '#FFCC00';
         ctx.font = `bold ${Math.floor(canvas.width * 0.06)}px Arial`;
         ctx.textAlign = 'left';
-        ctx.fillText('⏰ Chronos Booth', canvas.width * 0.05, canvas.height - 50);
+        ctx.fillText('⏰ Made with ChronosBooth', canvas.width * 0.05, canvas.height - 50);
         
         // Draw era label
         ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
@@ -66,7 +66,7 @@ export default function SocialDeeplinks({ transformation }) {
     }
     
     // Instagram Stories deep-link
-    const text = `✨ Check me out in the ${transformation.era_label} era on Chronos Booth!`;
+    const text = `✨ Check me out in the ${transformation.era_label} era on ChronosBooth!`;
     const instagramUrl = `instagram://story-camera/?source_url=${encodeURIComponent(watermarkedUrl)}&caption=${encodeURIComponent(text)}`;
     window.location.href = instagramUrl;
   };
@@ -89,7 +89,8 @@ export default function SocialDeeplinks({ transformation }) {
     }
     
     // Facebook share dialog
-    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(watermarkedUrl)}&quote=${encodeURIComponent(`✨ Check me out in the ${transformation.era_label} era on Chronos Booth!`)}`;
+    const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(watermarkedUrl)}&quote=${encodeURIComponent(`✨ Check me out in the ${transformation.era_label} era on ChronosBooth!`)}`;
+
     window.open(facebookUrl, '_blank', 'width=600,height=400');
   };
 
@@ -156,7 +157,7 @@ export default function SocialDeeplinks({ transformation }) {
       </div>
 
       <p className="text-xs text-muted-foreground text-center">
-        Watermarked with Chronos Booth logo and era label
+        Watermarked with ChronosBooth logo and era label
       </p>
     </motion.div>
   );

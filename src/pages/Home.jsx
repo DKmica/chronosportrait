@@ -21,8 +21,11 @@ import CreditsDisplay from '@/components/monetization/CreditsDisplay';
 import StreakReminderBanner from '@/components/home/StreakReminderBanner';
 import AdGateModal from '@/components/transform/AdGateModal';
 import LoraSelector from '@/components/transform/LoraSelector';
+import BannerAd from '@/components/ads/BannerAd';
+import RewardedAdButton from '@/components/ads/RewardedAdButton';
 import { getOrCreateProfile, getRemainingToday, consumeTransformation, addBonusTransformation } from '@/lib/usageLimit';
 import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt, buildKidsPrompt, buildPetPrompt } from '@/lib/faceSwapPrompt';
+import { APP_NAME, APP_TAGLINE } from '@/lib/appConfig';
 
 // Only flag clearly AI-generated filenames — avoid false positives on normal uploads
 const GENERATED_FILENAME_PATTERNS = ['generated_image', 'ai-generated'];
@@ -389,8 +392,8 @@ export default function Home() {
       <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-2">
         <div className="flex items-center justify-between mb-1">
           <div>
-            <h1 className="font-display text-2xl font-bold text-foreground leading-tight">ChronosBooth</h1>
-            <p className="text-muted-foreground text-xs">The AI Time Machine for You, Couples &amp; Crews</p>
+            <h1 className="font-display text-2xl font-bold text-foreground leading-tight">{APP_NAME}</h1>
+            <p className="text-muted-foreground text-xs">{APP_TAGLINE}</p>
           </div>
           <div className="flex items-center gap-2">
             <CreditsDisplay profile={userProfile} />
@@ -409,6 +412,11 @@ export default function Home() {
 
       {/* Streak reminder */}
       <StreakReminderBanner profile={userProfile} />
+
+      {/* Banner ad — free users only, below hero */}
+      <div className="px-5">
+        <BannerAd plan={userProfile?.plan} />
+      </div>
 
       {/* Daily Challenge */}
       <DailyChallenge
@@ -529,6 +537,12 @@ export default function Home() {
             )}
           </div>
         )}
+
+        {/* Rewarded ad — free users earn bonus transformations */}
+        <RewardedAdButton
+          profile={userProfile}
+          onRewarded={() => user?.email && getOrCreateProfile(user.email).then(setUserProfile)}
+        />
 
         {/* Error */}
         {error && (

@@ -3,27 +3,30 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Download, RotateCcw, Share2, AlertTriangle, Globe, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, RotateCcw, AlertTriangle, Globe, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import VideoGenerator from '@/components/result/VideoGenerator';
 import ShareToCommunityButton from '@/components/community/ShareToCommmunityButton';
 import BeforeAfterSlider from '@/components/result/BeforeAfterSlider';
-import ViralShareCard from '@/components/share/ViralShareCard';
-import SocialDeeplinks from '@/components/share/SocialDeeplinks';
-import { showInterstitialAd } from '@/lib/admob';
+import SharePanel from '@/components/share/SharePanel';
+import BannerAd from '@/components/ads/BannerAd';
+import { showInterstitialAd, recordTransformationCompleted } from '@/lib/admob';
+import { showWatermark, WATERMARK_TEXT } from '@/lib/appConfig';
+import { getOrCreateProfile } from '@/lib/usageLimit';
 
-const STUCK_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+const STUCK_TIMEOUT_MS = 5 * 60 * 1000;
 
 export default function Result() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [liveTransformation, setLiveTransformation] = useState(null);
-  const [viewMode, setViewMode] = useState('result'); // 'result' | 'compare' | 'share'
+  const [viewMode, setViewMode] = useState('result'); // 'result' | 'compare'
   const [isStuck, setIsStuck] = useState(false);
   const [spotlightOptIn, setSpotlightOptIn] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [sharedToSpotlight, setSharedToSpotlight] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
 
   const { data: transformation, isLoading, isError, error } = useQuery({
     queryKey: ['transformation', id],
@@ -31,44 +34,42 @@ export default function Result() {
     retry: false,
     queryFn: async () => {
       const res = await base44.functions.invoke('getTransformation', { id });
-      if (res.data?.error) {
-        throw new Error(res.data.error);
-      }
-      if (!res.data?.transformation) {
-        throw new Error('Transformation not found');
-      }
+      if (res.data?.error) throw new Error(res.data.error);
+      if (!res.data?.transformation) throw new Error('Transformation not found');
       return res.data.transformation;
     },
   });
 
   const t = liveTransformation || transformation;
 
-  // Show interstitial ad when transformation result is displayed
+  // Load user profile for plan/ad checks
+  useEffect(() => {
+    base44.auth.me().then(user => {
+      if (user?.email) getOrCreateProfile(user.email).then(setUserProfile);
+    }).catch(() => {});
+  }, []);
+
+  // Show interstitial ad when transformation result is displayed (free users only)
   useEffect(() => {
     if (t?.status === 'completed') {
-      showInterstitialAd().catch(() => {});
+      recordTransformationCompleted();
+      showInterstitialAd(userProfile?.plan).catch(() => {});
     }
-  }, [t?.id, t?.status]);
+  }, [t?.id, t?.status, userProfile?.plan]);
 
-  // Detect stuck processing jobs (processing > 5 min with no result)
+  // Detect stuck processing jobs
   useEffect(() => {
     if (!t) return;
     if (t.status === 'processing' && !t.transformed_photo_url) {
-      const createdAt = new Date(t.created_date).getTime();
-      const age = Date.now() - createdAt;
+      const age = Date.now() - new Date(t.created_date).getTime();
       if (age > STUCK_TIMEOUT_MS) {
         setIsStuck(true);
-        // Auto-mark as failed
         base44.entities.Transformation.update(t.id, { status: 'failed' }).catch(() => {});
       }
     }
   }, [t?.id, t?.status, t?.transformed_photo_url]);
 
-  const handleRetry = () => {
-    if (!t) return;
-    // Navigate home pre-seeding era so user can re-use the same era
-    navigate(`/?era=${encodeURIComponent(t.era || '')}`);
-  };
+  const handleRetry = () => navigate(`/?era=${encodeURIComponent(t?.era || '')}`);
 
   const handleSpotlightOptIn = async (checked) => {
     setSpotlightOptIn(checked);
@@ -88,6 +89,21 @@ export default function Result() {
     }
   };
 
+  const handleDownload = async () => {
+    if (!t?.transformed_photo_url) return;
+    const res = await fetch(t.transformed_photo_url);
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chronosbooth-${(t.era_label || 'portrait').toLowerCase().replace(/\s+/g, '-')}.jpg`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const userPlan = userProfile?.plan || 'free';
+  const needsWatermark = showWatermark(userPlan);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -105,15 +121,14 @@ export default function Result() {
         <div>
           <h1 className="font-display text-xl font-semibold text-foreground">Transformation unavailable</h1>
           <p className="text-sm text-muted-foreground mt-2">
-            {error?.message || 'We could not load this transformation. It may have been deleted or you may not have access.'}
+            {error?.message || 'We could not load this transformation. It may have been deleted.'}
           </p>
         </div>
-        <Button onClick={() => navigate('/')} className="rounded-xl">Back to Home</Button>
+        <Button onClick={() => navigate('/')} className="rounded-xl">Back to ChronosBooth</Button>
       </div>
     );
   }
 
-  // Failed or stuck state
   if (t.status === 'failed' || isStuck) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-5 text-center">
@@ -131,7 +146,7 @@ export default function Result() {
           Retry with Same Era
         </Button>
         <Button variant="ghost" onClick={() => navigate('/')} className="rounded-xl text-muted-foreground">
-          Back to Home
+          Back to ChronosBooth
         </Button>
       </div>
     );
@@ -140,7 +155,7 @@ export default function Result() {
   const canCompare = t.status === 'completed' && t.transformed_photo_url && t.original_photo_url;
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pb-12">
       {/* Header */}
       <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4 flex items-center justify-between">
         <button onClick={() => navigate(-1)} className="p-2 -ml-2">
@@ -156,7 +171,6 @@ export default function Result() {
           {[
             { id: 'result', label: '🖼️ Result' },
             { id: 'compare', label: '↔️ Compare' },
-            { id: 'share', label: '📲 Share Card' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -191,11 +205,23 @@ export default function Result() {
                     <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
                   </div>
                 )}
-                <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/50 backdrop-blur-sm">
-                  <span className="text-primary text-xs font-bold">⏰ Chronos Booth</span>
-                </div>
+
+                {/* Watermark overlay — free users only */}
+                {needsWatermark && t.status === 'completed' && (
+                  <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-sm">
+                    <span className="text-primary text-xs font-bold">⏰ {WATERMARK_TEXT}</span>
+                  </div>
+                )}
+
+                {/* Pro users: clean brand badge */}
+                {!needsWatermark && (
+                  <div className="absolute bottom-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-black/40 backdrop-blur-sm">
+                    <span className="text-primary/80 text-[10px] font-semibold">ChronosBooth</span>
+                  </div>
+                )}
               </motion.div>
 
+              {/* Original photos */}
               <div className="mt-4">
                 <p className="text-muted-foreground text-sm mb-2 font-medium uppercase tracking-wider">
                   Original{t.extra_photo_urls?.length > 0 ? 's' : ''}
@@ -224,12 +250,6 @@ export default function Result() {
               <p className="text-center text-sm text-muted-foreground mt-3">← Drag the handle to compare →</p>
             </motion.div>
           )}
-
-          {viewMode === 'share' && (
-            <motion.div key="share" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <ViralShareCard transformation={t} />
-            </motion.div>
-          )}
         </AnimatePresence>
       </div>
 
@@ -240,72 +260,78 @@ export default function Result() {
         </div>
       )}
 
+      {/* Banner Ad — below image, above action buttons, free users only */}
+      <div className="px-5 mt-4">
+        <BannerAd plan={userPlan} />
+      </div>
+
       {/* Actions */}
-      <div className="px-5 mt-6 space-y-3 pb-8">
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            className="flex-1 h-12 rounded-xl gap-2 border-border"
-            onClick={() => t.transformed_photo_url && window.open(t.transformed_photo_url, '_blank')}
+      {t.status === 'completed' && t.transformed_photo_url && (
+        <div className="px-5 mt-4 space-y-3">
+          {/* Primary actions: Download + Share (one SharePanel) */}
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              className="flex-1 h-12 rounded-xl gap-2 border-border"
+              onClick={handleDownload}
+            >
+              <Download className="w-4 h-4" />
+              {needsWatermark ? 'Download' : 'Save HD'}
+            </Button>
+            <SharePanel transformation={t} showWatermark={needsWatermark} />
+          </div>
+
+          {/* Pro upsell for free users */}
+          {needsWatermark && (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                <span className="font-semibold text-primary">Go Pro</span> to remove ads, remove watermarks,
+                unlock HD downloads, create videos, and access premium eras.{' '}
+                <button onClick={() => navigate('/pricing')} className="text-primary underline font-semibold">Upgrade →</button>
+              </p>
+            </div>
+          )}
+
+          {/* Community Spotlight opt-in */}
+          <div
+            onClick={() => !sharedToSpotlight && handleSpotlightOptIn(!spotlightOptIn)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer select-none ${
+              spotlightOptIn ? 'border-primary/60 bg-primary/10' : 'border-border bg-secondary/40'
+            } ${sharedToSpotlight ? 'opacity-75 cursor-default' : ''}`}
           >
-            <Download className="w-4 h-4" />
-            Save HD
-          </Button>
+            <div className={`w-5 h-5 rounded flex-shrink-0 border-2 flex items-center justify-center transition-all ${
+              spotlightOptIn ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+            }`}>
+              {spotlightOptIn && <span className="text-primary-foreground text-xs font-bold">✓</span>}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-primary inline" />
+                Feature in Community Spotlight
+                {isSharing && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
+                {sharedToSpotlight && (
+                  <span className="text-[10px] text-primary font-semibold bg-primary/10 px-1.5 py-0.5 rounded-full">Live!</span>
+                )}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {sharedToSpotlight
+                  ? 'Your portrait is featured on the ChronosBooth home page.'
+                  : 'Let others discover your portrait on the home page.'}
+              </p>
+            </div>
+          </div>
+
+          <ShareToCommunityButton transformation={t} />
+
           <Button
-            variant="outline"
-            className="flex-1 h-12 rounded-xl gap-2 border-border"
-            onClick={() => setViewMode('share')}
+            onClick={() => navigate('/')}
+            className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
           >
-            <Share2 className="w-4 h-4" />
-            Share
+            <RotateCcw className="w-4 h-4" />
+            New Transformation
           </Button>
         </div>
-
-        {t.status === 'completed' && t.transformed_photo_url && (
-          <>
-            <SocialDeeplinks transformation={t} />
-
-            {/* Community Spotlight opt-in */}
-            <div
-              onClick={() => !sharedToSpotlight && handleSpotlightOptIn(!spotlightOptIn)}
-              className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer select-none ${
-                spotlightOptIn
-                  ? 'border-primary/60 bg-primary/10'
-                  : 'border-border bg-secondary/40'
-              } ${sharedToSpotlight ? 'opacity-75 cursor-default' : ''}`}
-            >
-              <div className={`w-5 h-5 rounded flex-shrink-0 border-2 flex items-center justify-center transition-all ${
-                spotlightOptIn ? 'bg-primary border-primary' : 'border-muted-foreground/40'
-              }`}>
-                {spotlightOptIn && <span className="text-primary-foreground text-xs font-bold">✓</span>}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                  <Globe className="w-3.5 h-3.5 text-primary inline" />
-                  Feature in Community Spotlight
-                  {isSharing && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
-                  {sharedToSpotlight && <span className="text-[10px] text-primary font-semibold bg-primary/10 px-1.5 py-0.5 rounded-full">Live!</span>}
-                </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {sharedToSpotlight
-                    ? 'Your portrait is featured on the home page spotlight.'
-                    : 'Let others discover your portrait on the home page.'}
-                </p>
-              </div>
-            </div>
-
-            <ShareToCommunityButton transformation={t} />
-          </>
-        )}
-
-        <Button
-          onClick={() => navigate('/')}
-          className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-        >
-          <RotateCcw className="w-4 h-4" />
-          New Transformation
-        </Button>
-      </div>
+      )}
     </div>
   );
 }

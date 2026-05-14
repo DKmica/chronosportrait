@@ -61,7 +61,7 @@
     "bonus_transformations": {
       "type": "number",
       "default": 0,
-      "description": "Extra free transformations earned via referrals/sharing"
+      "description": "Extra free transformations earned via referrals/sharing/rewarded ads"
     },
     "total_transformations": {
       "type": "number",
@@ -85,6 +85,15 @@
     "challenge_completed_date": {
       "type": "string",
       "description": "ISO date of last daily challenge completion"
+    },
+    "rewarded_ads_watched_today": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of rewarded ads watched today"
+    },
+    "last_rewarded_ad_date": {
+      "type": "string",
+      "description": "ISO date when rewarded ads counter was last incremented"
     }
   },
   "required": [

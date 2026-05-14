@@ -7,12 +7,13 @@ import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 
 const FEATURES = [
-  'HD downloads — no watermark',
+  'Ad-free experience',
+  'No watermarks on downloads & shares',
+  'HD downloads',
   'All eras unlocked',
-  'Couples & Group mode always on',
+  'Cinematic video generation',
   'Priority AI generation',
   '100 transformations/month',
-  'Cinematic video generation',
 ];
 
 export default function UpgradeModal({ open, onOpenChange, featureHint }) {

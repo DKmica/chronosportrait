@@ -38,7 +38,7 @@ const SLIDES = [
       '✓ Front-facing or slight angle',
       '× No sunglasses or heavy filters',
       '× No collages or group photos',
-      '× No previous ChronosBooth results',
+      '× No previous ChronosBooth images as input',
     ],
   },
   {

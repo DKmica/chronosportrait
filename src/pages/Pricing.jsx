@@ -23,12 +23,13 @@ const CREDIT_COSTS = [
 ];
 
 const PRO_FEATURES = [
-  'HD downloads, no watermark',
+  'Ad-free experience',
+  'No watermarks on downloads & shares',
+  'HD downloads',
   'All eras unlocked',
-  'Couples & Group mode always on',
+  'Cinematic video generation',
   'Priority AI generation',
-  'Private generations',
-  'Weekly viral era packs',
+  'Couples & Group mode always on',
   '100 transformations/month',
 ];
 

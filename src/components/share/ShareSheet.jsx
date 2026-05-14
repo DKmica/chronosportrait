@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 
 function generateCaption(eraLabel) {
   const captions = [
-    `Just traveled back to the ${eraLabel} era with Chronos Booth! 🕰️✨ Which era should I try next?`,
+    `Just traveled back to the ${eraLabel} era with ChronosBooth! 🕰️✨ Which era should I try next?`,
     `What if I lived in ${eraLabel}? AI made it happen 🤯 #ChronosBooth #AIArt`,
-    `Me, but make it ${eraLabel}. 🏛️ Tried Chronos Booth and I'm obsessed! #TimeTravel #AITransformation`,
+    `Me, but make it ${eraLabel}. 🏛️ Tried ChronosBooth and I'm obsessed! #TimeTravel #AITransformation`,
     `Turns out I look pretty good as a ${eraLabel} character 😂✨ #ChronosBooth`,
   ];
   return captions[Math.floor(Math.random() * captions.length)];
@@ -23,7 +23,7 @@ export default function ShareSheet({ open, onOpenChange, transformation }) {
   const eraLabel = transformation.era_label || 'this era';
   const caption = generateCaption(eraLabel);
   const publicLink = `${window.location.origin}/result/${transformation.id}`;
-  const filename = `chronos-booth-${eraLabel.toLowerCase().replace(/\s+/g, '-')}.jpg`;
+  const filename = `chronosbooth-${eraLabel.toLowerCase().replace(/\s+/g, '-')}.jpg`;
 
   const handleDownload = async () => {
     setDownloading(true);

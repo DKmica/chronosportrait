@@ -1,10 +1,19 @@
-// Google AdMob Configuration
+// ─────────────────────────────────────────────
+// ChronosBooth — AdMob / Ad Monetization
+// Ads only shown to free users (plan === "free").
+// TODO: Replace test AdMob IDs with production IDs before launch.
+// ─────────────────────────────────────────────
 
-export const ADMOB_CONFIG = {
-  // Replace these with your actual IDs from Google AdMob
-  PUBLISHER_ID: import.meta.env.VITE_ADMOB_PUBLISHER_ID || 'ca-app-pub-xxxxxxxxxxxxxxxx',
-  INTERSTITIAL_AD_UNIT_ID: import.meta.env.VITE_ADMOB_INTERSTITIAL_AD_UNIT_ID || 'ca-app-pub-3940256099942544/1033173712',
-};
+import { ADMOB_CONFIG, showAds } from "@/lib/appConfig";
+
+// Track session state
+let sessionTransformationsCompleted = 0;
+let interstitialShownCount = 0;
+
+// Call this whenever a transformation completes
+export function recordTransformationCompleted() {
+  sessionTransformationsCompleted += 1;
+}
 
 // Initialize Google Mobile Ads SDK
 export const initAdMob = () => {
@@ -15,10 +24,17 @@ export const initAdMob = () => {
   }
 };
 
-// Load and display interstitial ad
-export const showInterstitialAd = () => {
+// Show interstitial ad if appropriate for this user
+// Rules: after every 2 completions, never before first generation, never during generation/payment
+export const showInterstitialAd = (plan) => {
+  if (!showAds(plan)) return Promise.resolve();
+  // Never show before the user's first generation this session
+  if (sessionTransformationsCompleted === 0) return Promise.resolve();
+  // Show every 2 completions
+  if (sessionTransformationsCompleted % 2 !== 0) return Promise.resolve();
+
   if (!window.googletag) {
-    console.warn('Google AdMob SDK not loaded');
+    console.warn("[AdMob] Google AdMob SDK not loaded — skipping interstitial.");
     return Promise.resolve();
   }
 
@@ -26,26 +42,46 @@ export const showInterstitialAd = () => {
     try {
       window.googletag.cmd.push(() => {
         const slot = window.googletag.defineSlot(
-          ADMOB_CONFIG.INTERSTITIAL_AD_UNIT_ID,
+          ADMOB_CONFIG.interstitialAdUnitId,
           [320, 480],
-          'gpt-interstitial'
-        ).addService(window.googletag.pubads());
-
+          "gpt-interstitial"
+        );
+        if (!slot) { resolve(); return; }
+        slot.addService(window.googletag.pubads());
         window.googletag.pubads().enableSingleRequest();
         window.googletag.enableServices();
-
-        window.googletag.pubads().addEventListener('slotRenderEnded', () => {
-          resolve();
-        });
-
-        window.googletag.display('gpt-interstitial');
-
-        // Fallback: resolve after 5 seconds if ad doesn't render
+        window.googletag.pubads().addEventListener("slotRenderEnded", () => resolve());
+        window.googletag.display("gpt-interstitial");
         setTimeout(() => resolve(), 5000);
       });
     } catch (error) {
-      console.warn('Error showing ad:', error);
+      console.warn("[AdMob] Error showing interstitial:", error);
       resolve();
+    }
+  });
+};
+
+// Show a rewarded ad — calls onRewarded() only if the user watches the full ad
+// Returns: promise resolving to { rewarded: boolean }
+export const showRewardedAd = (plan) => {
+  if (!showAds(plan)) return Promise.resolve({ rewarded: false });
+
+  if (!window.googletag) {
+    console.warn("[AdMob] Google AdMob SDK not loaded — skipping rewarded ad.");
+    return Promise.resolve({ rewarded: false });
+  }
+
+  return new Promise((resolve) => {
+    try {
+      window.googletag.cmd.push(() => {
+        // In production this would use the rewarded ad API
+        // For test: simulate rewarded ad completion after 3 seconds
+        const rewarded = true; // In real integration, this would come from the ad callback
+        setTimeout(() => resolve({ rewarded }), 3000);
+      });
+    } catch (error) {
+      console.warn("[AdMob] Error showing rewarded ad:", error);
+      resolve({ rewarded: false });
     }
   });
 };

@@ -16,7 +16,7 @@ const IG_CAPTIONS = [
   'Me but make it {era} 🎨 #AIArt #ChronosBooth',
 ];
 const FB_CAPTIONS = [
-  'AI just revealed I belong in the {era} era! Check out Chronos Booth to find your own era 🕰️✨',
+  'AI just revealed I belong in the {era} era! Check out ChronosBooth to find your own era 🕰️✨',
   'What would you look like in {era}? This AI app is unreal. Try it → ChronosBooth',
 ];
 
@@ -78,7 +78,7 @@ Return ONLY the caption text, no extra explanation.`,
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `chronos-booth-${eraLabel.toLowerCase().replace(/\s+/g, '-')}.jpg`;
+      a.download = `chronosbooth-${eraLabel.toLowerCase().replace(/\s+/g, '-')}.jpg`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {
@@ -124,7 +124,7 @@ Return ONLY the caption text, no extra explanation.`,
             <p className="text-white/60 text-xs">AI-Generated Portrait</p>
           </div>
           <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-black/50 backdrop-blur-sm">
-            <span className="text-primary text-xs font-bold">⏰ Time Frame Shift</span>
+            <span className="text-primary text-xs font-bold">⏰ ChronosBooth</span>
           </div>
         </div>
       </div>
