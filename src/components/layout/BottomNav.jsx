@@ -18,8 +18,10 @@ export default function BottomNav() {
   const { selectTab } = useTabNavigation();
 
   const handleTabClick = (path) => {
+    const isActive = location.pathname === path;
     selectTab(path);
-    navigate(path);
+    // If already on this tab, reset to root path (clears sub-navigation history)
+    navigate(path, { replace: isActive });
   };
 
   return (
