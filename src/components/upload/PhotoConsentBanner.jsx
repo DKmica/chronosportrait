@@ -33,8 +33,8 @@ export default function PhotoConsentBanner() {
         >
           <ShieldCheck className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-foreground font-semibold mb-0.5">Photo upload consent</p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-sm text-foreground font-semibold mb-0.5">Photo upload consent</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Photos you upload are used only to generate your AI portrait. We never sell or share
               your images. By uploading you agree to our{' '}
               <a href="/legal" className="text-primary underline">Privacy Policy</a>.

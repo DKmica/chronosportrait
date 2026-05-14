@@ -139,9 +139,7 @@ export default function DailyChallenge({ profile, onProfileUpdate }) {
                     <Snowflake className="w-4 h-4 text-blue-400" />
                     <span className="text-sm font-semibold text-foreground">Streak Freeze</span>
                     {freezes > 0 && (
-                      <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full font-semibold">
-                        ×{freezes}
-                      </span>
+                      <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full font-semibold">×{freezes}</span>
                     )}
                   </div>
                 </div>
@@ -192,7 +190,7 @@ export default function DailyChallenge({ profile, onProfileUpdate }) {
                 </div>
 
                 {credits < FREEZE_COST && isPro && (
-                  <p className="text-[10px] text-muted-foreground mt-2">
+                  <p className="text-xs text-muted-foreground mt-2">
                     Not enough credits.{' '}
                     <button onClick={() => navigate('/pricing')} className="text-primary underline">
                       Buy credits →

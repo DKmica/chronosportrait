@@ -49,7 +49,7 @@ export default function ReportPostButton({ postId, onReported }) {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-destructive/70 transition-colors"
+        className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-destructive/70 transition-colors min-h-[44px]"
       >
         <Flag className="w-3.5 h-3.5" />
         Report
@@ -68,7 +68,7 @@ export default function ReportPostButton({ postId, onReported }) {
             <div className="flex flex-col items-center gap-3 py-4 text-center">
               <CheckCircle2 className="w-10 h-10 text-green-400" />
               <p className="text-sm font-semibold text-foreground">Thanks for letting us know!</p>
-              <p className="text-xs text-muted-foreground">We'll review this post shortly.</p>
+              <p className="text-sm text-muted-foreground">We'll review this post shortly.</p>
             </div>
           ) : (
             <div className="space-y-3">
