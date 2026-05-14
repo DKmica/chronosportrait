@@ -21,6 +21,8 @@ const FindTimeline = lazy(() => import('@/pages/FindTimeline'));
 const EraPack = lazy(() => import('@/pages/EraPack.jsx'));
 const Legal = lazy(() => import('@/pages/Legal'));
 const MyCollection = lazy(() => import('@/pages/MyCollection'));
+const Pricing = lazy(() => import('@/pages/Pricing.jsx'));
+const Admin = lazy(() => import('@/pages/Admin.jsx'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -67,6 +69,8 @@ const AuthenticatedApp = () => {
           <Route path="/find-timeline" element={<FindTimeline />} />
           <Route path="/era-pack" element={<EraPack />} />
           <Route path="/legal" element={<Legal />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/admin" element={<Admin />} />
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>

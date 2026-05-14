@@ -16,6 +16,8 @@ import ScenarioSelector from '@/components/transform/ScenarioSelector';
 import GroupPhotoUploader from '@/components/transform/GroupPhotoUploader';
 import LimitBanner from '@/components/transform/LimitBanner';
 import SpotlightSection from '@/components/community/SpotlightSection';
+import DailyChallenge from '@/components/home/DailyChallenge';
+import CreditsDisplay from '@/components/monetization/CreditsDisplay';
 import AdGateModal from '@/components/transform/AdGateModal';
 import { getOrCreateProfile, getRemainingToday, consumeTransformation, addBonusTransformation } from '@/lib/usageLimit';
 import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt, buildKidsPrompt, buildPetPrompt } from '@/lib/faceSwapPrompt';
@@ -361,13 +363,16 @@ export default function Home() {
       <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-2">
         <div className="flex items-center justify-between mb-1">
           <div>
-            <h1 className="font-display text-2xl font-bold text-foreground leading-tight">Chronos Booth</h1>
-            <p className="text-muted-foreground text-xs">Step into another era</p>
+            <h1 className="font-display text-2xl font-bold text-foreground leading-tight">ChronosBooth</h1>
+            <p className="text-muted-foreground text-xs">The AI Time Machine for You, Couples &amp; Crews</p>
           </div>
-          <button onClick={() => navigate('/find-timeline')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/15 border border-primary/30 text-primary text-xs font-semibold">
-            <Sparkles className="w-3.5 h-3.5" />
-            Find My Era
-          </button>
+          <div className="flex items-center gap-2">
+            <CreditsDisplay profile={userProfile} />
+            <button onClick={() => navigate('/find-timeline')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/15 border border-primary/30 text-primary text-xs font-semibold">
+              <Sparkles className="w-3.5 h-3.5" />
+              Find My Era
+            </button>
+          </div>
         </div>
       </div>
 
@@ -375,6 +380,9 @@ export default function Home() {
       <div className="px-5 mb-3">
         <LimitBanner remaining={remaining} timeUntilReset={timeUntilReset} profile={userProfile} onShareForBonus={handleShareForBonus} />
       </div>
+
+      {/* Daily Challenge */}
+      <DailyChallenge profile={userProfile} />
 
       {/* Community Spotlight */}
       <SpotlightSection />

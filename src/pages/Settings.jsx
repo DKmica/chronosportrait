@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Crown, LogOut, ChevronRight, Sparkles, Shield, Star, Trash2 } from 'lucide-react';
+import { User, Crown, LogOut, ChevronRight, Sparkles, Shield, Star, Trash2, Zap, LayoutDashboard } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
@@ -185,6 +185,15 @@ export default function Settings() {
                   <span>{profile.bonus_transformations} bonus transformation{profile.bonus_transformations !== 1 ? 's' : ''} from referrals</span>
                 </div>
               )}
+              {(profile.credits || 0) > 0 && (
+                <div className="mt-2 flex items-center justify-between px-3 py-2 rounded-xl bg-secondary/60 border border-border">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Zap className="w-4 h-4 text-primary" />
+                    <span className="font-semibold text-foreground">{profile.credits} credits</span>
+                  </div>
+                  <button onClick={() => navigate('/pricing')} className="text-xs text-primary font-semibold">Buy more</button>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -214,6 +223,13 @@ export default function Settings() {
               </div>
               {plan === 'free' && (
                 <div className="space-y-3">
+                  <button
+                    onClick={() => navigate('/pricing')}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-secondary/60 border border-border hover:border-primary/40 transition-colors"
+                  >
+                    <span className="text-sm text-foreground font-semibold">View full pricing & credits</span>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  </button>
                   <div className="rounded-xl bg-muted/40 border border-border p-3 space-y-1.5">
                     <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Free Tier includes</p>
                     {[
@@ -242,14 +258,14 @@ export default function Settings() {
                         onClick={() => setSelectedBillingPlan('pro_monthly')}
                         className={`flex-1 rounded-xl border py-2 text-xs font-semibold transition-colors ${selectedBillingPlan === 'pro_monthly' ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:border-primary/50'}`}
                       >
-                        Monthly<br /><span className="font-bold text-sm">$7.99</span>
+                        Monthly<br /><span className="font-bold text-sm">$9.99</span>
                       </button>
                       <button
                         onClick={() => setSelectedBillingPlan('pro_yearly')}
                         className={`flex-1 rounded-xl border py-2 text-xs font-semibold transition-colors relative ${selectedBillingPlan === 'pro_yearly' ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:border-primary/50'}`}
                       >
                         <span className="absolute -top-2 left-1/2 -translate-x-1/2 bg-accent text-accent-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full whitespace-nowrap">Save 58%</span>
-                        Yearly<br /><span className="font-bold text-sm">$39.99</span>
+                        Yearly<br /><span className="font-bold text-sm">$79.99</span>
                       </button>
                     </div>
                     <Button
@@ -258,7 +274,7 @@ export default function Settings() {
                       className="w-full h-10 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground gap-2 text-sm font-semibold disabled:opacity-60"
                     >
                       <Crown className="w-4 h-4" />
-                      {upgrading ? 'Redirecting...' : `Upgrade to Pro — ${selectedBillingPlan === 'pro_yearly' ? '$39.99/yr' : '$7.99/mo'}`}
+                      {upgrading ? 'Redirecting...' : `Upgrade to Pro — ${selectedBillingPlan === 'pro_yearly' ? '$79.99/yr' : '$9.99/mo'}`}
                     </Button>
                   </div>
                 </div>
@@ -270,6 +286,20 @@ export default function Settings() {
           {profile && (
             <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
               <ReferAndEarn profile={profile} />
+            </motion.div>
+          )}
+
+          {/* Admin link */}
+          {user?.role === 'admin' && (
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}>
+              <button
+                onClick={() => navigate('/admin')}
+                className="w-full flex items-center gap-3 px-5 py-4 rounded-2xl border border-border bg-card hover:bg-muted/30 transition-colors"
+              >
+                <LayoutDashboard className="w-4 h-4 text-muted-foreground" />
+                <span className="flex-1 text-sm text-foreground text-left">Admin Dashboard</span>
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+              </button>
             </motion.div>
           )}
 

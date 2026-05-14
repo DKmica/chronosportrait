@@ -45,12 +45,30 @@
     "bonus_transformations": {
       "type": "number",
       "default": 0,
-      "description": "Extra free transformations earned via referrals"
+      "description": "Extra free transformations earned via referrals/sharing"
     },
     "total_transformations": {
       "type": "number",
       "default": 0,
       "description": "All-time total transformations"
+    },
+    "credits": {
+      "type": "number",
+      "default": 0,
+      "description": "Purchased or earned credits balance"
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "description": "Stripe customer ID"
+    },
+    "watermark_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Whether watermark is shown on downloads"
+    },
+    "challenge_completed_date": {
+      "type": "string",
+      "description": "ISO date of last daily challenge completion"
     }
   },
   "required": [

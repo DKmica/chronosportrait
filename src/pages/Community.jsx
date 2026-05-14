@@ -2,18 +2,21 @@ import React, { useState, useRef, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
-import { Users, Flame, Clock, RefreshCw } from 'lucide-react';
+import { Users, Flame, Clock, RefreshCw, Heart, Users2, Video } from 'lucide-react';
 import CommunityPostCard from '@/components/community/CommunityPostCard';
 
-const SORTS = [
-  { id: 'latest', label: 'Latest', icon: Clock },
-  { id: 'top', label: 'Top', icon: Flame },
+const TABS = [
+  { id: 'latest', label: 'New', icon: Clock },
+  { id: 'top', label: 'Trending', icon: Flame },
+  { id: 'most_liked', label: 'Top Liked', icon: Heart },
+  { id: 'couples', label: 'Couples', icon: Users2 },
+  { id: 'crews', label: 'Crews', icon: Users },
 ];
 
 const PULL_THRESHOLD = 70;
 
 export default function Community() {
-  const [sort, setSort] = useState('latest');
+  const [tab, setTab] = useState('latest');
   const queryClient = useQueryClient();
   const [pullY, setPullY] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,29 +54,25 @@ export default function Community() {
 
   const currentUserEmail = me?.email || null;
 
-  const sorted = [...posts].sort((a, b) => {
-    if (sort === 'top') return (b.likes_count || 0) - (a.likes_count || 0);
-    return new Date(b.created_date) - new Date(a.created_date);
-  });
+  const filtered = (() => {
+    let list = [...posts];
+    if (tab === 'latest') return list.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    if (tab === 'top' || tab === 'most_liked') return list.sort((a, b) => (b.likes_count || 0) - (a.likes_count || 0));
+    if (tab === 'couples') return list.filter(p => p.era_label?.toLowerCase().includes('couple') || (p.caption || '').toLowerCase().includes('couple'));
+    if (tab === 'crews') return list.filter(p => p.era_label?.toLowerCase().includes('group') || p.era_label?.toLowerCase().includes('crew') || (p.caption || '').toLowerCase().includes('crew'));
+    return list;
+  })();
 
   const handleLikeToggle = async (post, hasLiked) => {
     const likedBy = post.liked_by || [];
     const newLikedBy = hasLiked
-      ? likedBy.filter((e) => e !== currentUserEmail)
+      ? likedBy.filter(e => e !== currentUserEmail)
       : [...likedBy, currentUserEmail];
     const newCount = newLikedBy.length;
-
-    // Optimistic update
     queryClient.setQueryData(['community-posts'], (old) =>
-      (old || []).map((p) =>
-        p.id === post.id ? { ...p, liked_by: newLikedBy, likes_count: newCount } : p
-      )
+      (old || []).map(p => p.id === post.id ? { ...p, liked_by: newLikedBy, likes_count: newCount } : p)
     );
-
-    await base44.entities.CommunityPost.update(post.id, {
-      liked_by: newLikedBy,
-      likes_count: newCount,
-    });
+    await base44.entities.CommunityPost.update(post.id, { liked_by: newLikedBy, likes_count: newCount });
   };
 
   return (
@@ -83,7 +82,7 @@ export default function Community() {
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
-      {/* Pull to refresh indicator */}
+      {/* Pull to refresh */}
       <motion.div
         animate={{ height: pullY > 0 || refreshing ? 44 : 0, opacity: pullY > 0 || refreshing ? 1 : 0 }}
         className="flex items-center justify-center overflow-hidden"
@@ -100,17 +99,17 @@ export default function Community() {
         <p className="text-muted-foreground text-sm ml-7">Portraits shared by time travelers</p>
       </div>
 
-      {/* Sort tabs */}
-      <div className="px-5 mb-4">
-        <div className="flex gap-2 p-1 rounded-xl bg-muted/50 w-fit">
-          {SORTS.map(({ id, label, icon: Icon }) => (
+      {/* Tabs */}
+      <div className="px-5 mb-4 overflow-x-auto">
+        <div className="flex gap-2 w-max">
+          {TABS.map(({ id, label, icon: Icon }) => (
             <button
               key={id}
-              onClick={() => setSort(id)}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                sort === id
-                  ? 'bg-card text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
+              onClick={() => setTab(id)}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all whitespace-nowrap border ${
+                tab === id
+                  ? 'bg-primary text-primary-foreground border-primary'
+                  : 'bg-card text-muted-foreground border-border hover:border-primary/30'
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
@@ -125,7 +124,7 @@ export default function Community() {
         <div className="flex items-center justify-center py-20">
           <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
         </div>
-      ) : sorted.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 px-5 text-center">
           <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-4">
             <Users className="w-8 h-8 text-muted-foreground" />
@@ -137,7 +136,7 @@ export default function Community() {
         </div>
       ) : (
         <div className="px-5 grid grid-cols-1 gap-4 pb-6">
-          {sorted.map((post, index) => (
+          {filtered.map((post, index) => (
             <motion.div
               key={post.id}
               initial={{ opacity: 0, y: 20 }}
