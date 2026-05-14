@@ -20,6 +20,7 @@ import DailyChallenge from '@/components/home/DailyChallenge';
 import CreditsDisplay from '@/components/monetization/CreditsDisplay';
 import StreakReminderBanner from '@/components/home/StreakReminderBanner';
 import AdGateModal from '@/components/transform/AdGateModal';
+import LoraSelector from '@/components/transform/LoraSelector';
 import { getOrCreateProfile, getRemainingToday, consumeTransformation, addBonusTransformation } from '@/lib/usageLimit';
 import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt, buildKidsPrompt, buildPetPrompt } from '@/lib/faceSwapPrompt';
 
@@ -71,6 +72,7 @@ export default function Home() {
   const [customEraText, setCustomEraText] = useState('');
   const [selectedMode, setSelectedMode] = useState('solo');
   const [selectedStyle, setSelectedStyle] = useState('balanced');
+  const [selectedLoraId, setSelectedLoraId] = useState(null);
   const [isTransforming, setIsTransforming] = useState(false);
   const [transformStep, setTransformStep] = useState(0);
   const [error, setError] = useState(null);
@@ -177,12 +179,21 @@ export default function Home() {
   };
 
   const handleGroupAdd = (file, preview) => {
-    if (groupPhotos.length >= 6) return;
+    if (groupPhotos.length >= 10) return;
     setGroupPhotos(prev => [...prev, { file, preview, url: null }]);
   };
 
   const handleGroupRemove = (index) => {
     setGroupPhotos(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleGroupReorder = (from, to) => {
+    setGroupPhotos(prev => {
+      const arr = [...prev];
+      const [item] = arr.splice(from, 1);
+      arr.splice(to, 0, item);
+      return arr;
+    });
   };
 
   const canTransform = () => {
@@ -304,7 +315,21 @@ export default function Home() {
           : baseEraPrompt;
         eraId = selectedEra?.id === 'custom' ? 'custom' : selectedEra?.id;
         eraLabel = selectedEra?.id === 'custom' ? (customEraText.slice(0, 30) || 'Custom Era') : selectedEra?.label;
-        finalPrompt = buildFaceSwapPrompt(eraPrompt, eraLabel);
+
+        // Inject LoRA face description for higher consistency
+        let loraExtraContext = '';
+        if (selectedLoraId) {
+          const { StyleLora } = base44.entities;
+          const loraList = await StyleLora.filter({ id: selectedLoraId });
+          const lora = loraList?.[0];
+          if (lora?.face_description) {
+            loraExtraContext = `\nPERSONAL IDENTITY LOCK (AI Model: ${lora.name}):\n${lora.face_description}\nPreserve ALL of the above features with the highest priority.`;
+            // increment usage count
+            StyleLora.update(lora.id, { transformations_using_lora: (lora.transformations_using_lora || 0) + 1 });
+          }
+        }
+
+        finalPrompt = buildFaceSwapPrompt(eraPrompt + loraExtraContext, eraLabel);
       }
 
       // Step 3: Create DB record
@@ -421,7 +446,8 @@ export default function Home() {
               photos={groupPhotos}
               onAdd={handleGroupAdd}
               onRemove={handleGroupRemove}
-              maxPhotos={6}
+              onReorder={handleGroupReorder}
+              maxPhotos={10}
             />
           </div>
         ) : (
@@ -435,6 +461,11 @@ export default function Home() {
               onClear={() => { setPhoto(null); setPhotoPreview(null); setPhotoUrl(null); }}
             />
           </div>
+        )}
+
+        {/* LoRA model selector (solo mode only) */}
+        {!isPartnersMode && !isKidsMode && !isPetMode && !isGroupMode && (
+          <LoraSelector selectedLoraId={selectedLoraId} onSelect={setSelectedLoraId} />
         )}
 
         {/* Kids scenario selector */}

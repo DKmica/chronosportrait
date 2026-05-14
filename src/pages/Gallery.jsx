@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
-import { Images, Clock, Users, Package, RefreshCw } from 'lucide-react';
+import { Images, Clock, Users, Package, RefreshCw, Brain } from 'lucide-react';
 
 const TABS = [
   { id: 'all', label: 'All', icon: Images },
@@ -73,9 +73,18 @@ export default function Gallery() {
 
       {/* Header */}
       <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4">
-        <div className="flex items-center gap-2 mb-1">
-          <Images className="w-5 h-5 text-primary" />
-          <h1 className="font-display text-xl font-bold text-foreground">Gallery</h1>
+        <div className="flex items-center justify-between mb-1">
+          <div className="flex items-center gap-2">
+            <Images className="w-5 h-5 text-primary" />
+            <h1 className="font-display text-xl font-bold text-foreground">Gallery</h1>
+          </div>
+          <button
+            onClick={() => navigate('/style-lora')}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/15 border border-primary/30 text-primary text-xs font-semibold"
+          >
+            <Brain className="w-3.5 h-3.5" />
+            My AI Style
+          </button>
         </div>
         <p className="text-muted-foreground text-sm ml-7">{completed.length} portrait{completed.length !== 1 ? 's' : ''} created</p>
       </div>

@@ -4,7 +4,7 @@ const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 const GEMINI_MODEL = 'gemini-2.5-flash-image';
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
-const MAX_PEOPLE = 6;
+const MAX_PEOPLE = 10;
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
     }
     if (personCount > MAX_PEOPLE) {
       return Response.json({
-        error: `Group mode currently supports up to ${MAX_PEOPLE} people for best face accuracy. You uploaded ${personCount}.`,
+        error: `Group mode currently supports up to ${MAX_PEOPLE} people. You uploaded ${personCount}.`,
       }, { status: 400 });
     }
 

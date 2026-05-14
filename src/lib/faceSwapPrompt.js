@@ -19,8 +19,16 @@ function getLayoutInstruction(personCount) {
       return 'Create a five-person cinematic cast portrait. Person 1 center, Person 2 left-center, Person 3 right-center, Person 4 far left, Person 5 far right. All faces visible, sharp, and equally important.';
     case 6:
       return 'Create a six-person formal group portrait with three people in front and three people behind. Person 1 front center, Person 2 front left, Person 3 front right, Person 4 back left, Person 5 back center, Person 6 back right. All six faces fully visible and recognizable.';
+    case 7:
+      return 'Create a seven-person cinematic ensemble portrait. Arrange in two rows: 4 in front, 3 behind. All seven faces must be fully visible, sharp, and equally recognizable.';
+    case 8:
+      return 'Create an eight-person group portrait in two rows of 4. Front row: Persons 1–4. Back row: Persons 5–8. All faces fully visible and sharp.';
+    case 9:
+      return 'Create a nine-person group portrait. Three rows of three. Front row: Persons 1–3. Middle row: Persons 4–6. Back row: Persons 7–9. All faces fully visible.';
+    case 10:
+      return 'Create a ten-person ensemble portrait. Two rows of 5. Front row: Persons 1–5. Back row: Persons 6–10. All ten faces clearly visible and recognizable.';
     default:
-      return 'Create a cinematic group portrait. All people must be clearly visible from at least the chest up. All faces must be sharp and recognizable.';
+      return 'Create a cinematic group portrait. Arrange all people in rows so every face is clearly visible from at least the chest up. All faces must be sharp and recognizable.';
   }
 }
 

@@ -23,6 +23,7 @@ const Legal = lazy(() => import('@/pages/Legal'));
 const MyCollection = lazy(() => import('@/pages/MyCollection'));
 const Pricing = lazy(() => import('@/pages/Pricing.jsx'));
 const Admin = lazy(() => import('@/pages/Admin.jsx'));
+const StyleLora = lazy(() => import('@/pages/StyleLora.jsx'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -71,6 +72,7 @@ const AuthenticatedApp = () => {
           <Route path="/legal" element={<Legal />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/style-lora" element={<StyleLora />} />
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>
