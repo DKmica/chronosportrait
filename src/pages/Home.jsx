@@ -18,6 +18,7 @@ import LimitBanner from '@/components/transform/LimitBanner';
 import SpotlightSection from '@/components/community/SpotlightSection';
 import DailyChallenge from '@/components/home/DailyChallenge';
 import CreditsDisplay from '@/components/monetization/CreditsDisplay';
+import StreakReminderBanner from '@/components/home/StreakReminderBanner';
 import AdGateModal from '@/components/transform/AdGateModal';
 import { getOrCreateProfile, getRemainingToday, consumeTransformation, addBonusTransformation } from '@/lib/usageLimit';
 import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt, buildKidsPrompt, buildPetPrompt } from '@/lib/faceSwapPrompt';
@@ -381,8 +382,14 @@ export default function Home() {
         <LimitBanner remaining={remaining} timeUntilReset={timeUntilReset} profile={userProfile} onShareForBonus={handleShareForBonus} />
       </div>
 
+      {/* Streak reminder */}
+      <StreakReminderBanner profile={userProfile} />
+
       {/* Daily Challenge */}
-      <DailyChallenge profile={userProfile} />
+      <DailyChallenge
+        profile={userProfile}
+        onProfileUpdate={() => user?.email && getOrCreateProfile(user.email).then(setUserProfile)}
+      />
 
       {/* Community Spotlight */}
       <SpotlightSection />

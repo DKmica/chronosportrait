@@ -34,6 +34,22 @@
       "type": "string",
       "description": "ISO date for streak tracking"
     },
+    "streak_history": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Array of ISO date strings when the user completed a transformation (for calendar)"
+    },
+    "streak_freezes": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of streak freeze tokens the user has"
+    },
+    "streak_freeze_used_date": {
+      "type": "string",
+      "description": "ISO date when a streak freeze was last used"
+    },
     "referral_code": {
       "type": "string",
       "description": "Unique referral code for this user"

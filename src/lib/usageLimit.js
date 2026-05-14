@@ -58,11 +58,34 @@ export async function consumeTransformation(profile) {
   const overBase = usedToday >= FREE_DAILY_LIMIT;
   const bonusLeft = profile.bonus_transformations || 0;
 
+  // Update streak
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayStr = yesterday.toISOString().split('T')[0];
+  const lastStreak = profile.last_streak_date;
+  const currentStreak = profile.streak_days || 0;
+
+  let newStreak = currentStreak;
+  if (lastStreak !== today) {
+    // continuing streak from yesterday, or starting fresh
+    newStreak = (lastStreak === yesterdayStr || lastStreak === profile.streak_freeze_used_date)
+      ? currentStreak + 1
+      : 1;
+  }
+
+  // Append today to streak_history (deduplicated)
+  const history = profile.streak_history || [];
+  const newHistory = history.includes(today) ? history : [...history, today].slice(-90); // keep last 90 days
+
   await base44.entities.UserProfile.update(profile.id, {
     transformations_today: isNewDay ? 1 : usedToday + 1,
     last_transform_date: today,
     total_transformations: (profile.total_transformations || 0) + 1,
     bonus_transformations: overBase && bonusLeft > 0 ? bonusLeft - 1 : bonusLeft,
+    streak_days: newStreak,
+    last_streak_date: today,
+    streak_history: newHistory,
+    challenge_completed_date: today,
   });
 }
 
