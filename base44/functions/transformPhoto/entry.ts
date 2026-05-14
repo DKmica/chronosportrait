@@ -95,6 +95,18 @@ async function generateMultiPerson(base44, allPhotoUrls, prompt) {
   return url;
 }
 
+// ── Generated image URL detector ──────────────────────────────────────────
+
+const GENERATED_IMAGE_PATTERNS = [
+  'generated_image', 'output.', 'chronos-booth', 'transformed', 'ai-generated', 'result'
+];
+
+function looksLikeGeneratedImage(url) {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  return GENERATED_IMAGE_PATTERNS.some(p => lower.includes(p));
+}
+
 // ── Main handler ──────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -118,14 +130,18 @@ Deno.serve(async (req) => {
       console.log('Body parse error:', e.message);
     }
 
-    const { prompt, original_photo_url, extra_photo_urls = [] } = body;
+    const { prompt, original_photo_url, extra_photo_urls = [], transformation_id } = body;
     const personCount = 1 + extra_photo_urls.length;
+    const allUrls = [original_photo_url, ...extra_photo_urls];
 
-    console.log('Params:', {
-      promptSnippet: prompt?.slice(0, 80),
-      original_photo_url: original_photo_url?.slice(0, 60),
-      extra_count: extra_photo_urls.length,
+    // Debug metadata
+    console.log('[debug]', {
       personCount,
+      original_photo_url: original_photo_url?.slice(0, 80),
+      extra_photo_count: extra_photo_urls.length,
+      transformation_id,
+      promptPreview: prompt?.slice(0, 120),
+      provider: 'gemini',
     });
 
     // Auth
@@ -145,12 +161,18 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Validate all URLs
-    const allUrls = [original_photo_url, ...extra_photo_urls];
+    // Validate all URLs — reject blobs and generated images
     for (let i = 0; i < allUrls.length; i++) {
       if (isInvalidUrl(allUrls[i])) {
         return Response.json({
           error: `Person ${i + 1}'s photo must be uploaded to a hosted URL before generating. Please re-upload and try again.`,
+        }, { status: 400 });
+      }
+      if (looksLikeGeneratedImage(allUrls[i])) {
+        console.warn(`[warn] Person ${i + 1} URL looks like a generated image:`, allUrls[i].slice(0, 80));
+        return Response.json({
+          error: `Please upload original face photos, not previously generated ChronosBooth images. Generated images reduce face accuracy. (Person ${i + 1})`,
+          error_code: 'GENERATED_IMAGE_REFERENCE',
         }, { status: 400 });
       }
     }
@@ -158,11 +180,11 @@ Deno.serve(async (req) => {
     console.log(`[main] Starting generation for ${personCount} person(s)...`);
     const url = await generateMultiPerson(base44, allUrls, prompt);
 
-    console.log('Transform complete:', url?.slice(0, 60));
+    console.log('[main] Transform complete:', url?.slice(0, 80));
     return Response.json({ url });
 
   } catch (error) {
-    console.error('transformPhoto error:', error.message);
+    console.error('[error] transformPhoto:', error.message);
 
     let userMessage = error.message;
     if (error.message.includes('401') || error.message.includes('403')) {

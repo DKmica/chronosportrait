@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Download, RotateCcw, Share2 } from 'lucide-react';
+import { ArrowLeft, Download, RotateCcw, Share2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import VideoGenerator from '@/components/result/VideoGenerator';
 import ShareToCommunityButton from '@/components/community/ShareToCommmunityButton';
@@ -12,12 +12,15 @@ import ViralShareCard from '@/components/share/ViralShareCard';
 import SocialDeeplinks from '@/components/share/SocialDeeplinks';
 import { showInterstitialAd } from '@/lib/admob';
 
+const STUCK_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
 export default function Result() {
   const { id } = useParams();
   const navigate = useNavigate();
 
   const [liveTransformation, setLiveTransformation] = useState(null);
   const [viewMode, setViewMode] = useState('result'); // 'result' | 'compare' | 'share'
+  const [isStuck, setIsStuck] = useState(false);
 
   const { data: transformation, isLoading, isError, error } = useQuery({
     queryKey: ['transformation', id],
@@ -44,6 +47,26 @@ export default function Result() {
     }
   }, [t?.id, t?.status]);
 
+  // Detect stuck processing jobs (processing > 5 min with no result)
+  useEffect(() => {
+    if (!t) return;
+    if (t.status === 'processing' && !t.transformed_photo_url) {
+      const createdAt = new Date(t.created_date).getTime();
+      const age = Date.now() - createdAt;
+      if (age > STUCK_TIMEOUT_MS) {
+        setIsStuck(true);
+        // Auto-mark as failed
+        base44.entities.Transformation.update(t.id, { status: 'failed' }).catch(() => {});
+      }
+    }
+  }, [t?.id, t?.status, t?.transformed_photo_url]);
+
+  const handleRetry = () => {
+    if (!t) return;
+    // Navigate home pre-seeding era so user can re-use the same era
+    navigate(`/?era=${encodeURIComponent(t.era || '')}`);
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -65,6 +88,30 @@ export default function Result() {
           </p>
         </div>
         <Button onClick={() => navigate('/')} className="rounded-xl">Back to Home</Button>
+      </div>
+    );
+  }
+
+  // Failed or stuck state
+  if (t.status === 'failed' || isStuck) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-5 text-center">
+        <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center">
+          <AlertTriangle className="w-6 h-6 text-destructive" />
+        </div>
+        <div>
+          <h1 className="font-display text-xl font-semibold text-foreground">Generation failed</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            Generation took too long or may have failed. Please retry with clearer, front-facing photos.
+          </p>
+        </div>
+        <Button onClick={handleRetry} className="rounded-xl gap-2">
+          <RotateCcw className="w-4 h-4" />
+          Retry with Same Era
+        </Button>
+        <Button variant="ghost" onClick={() => navigate('/')} className="rounded-xl text-muted-foreground">
+          Back to Home
+        </Button>
       </div>
     );
   }

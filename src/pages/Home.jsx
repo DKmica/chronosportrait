@@ -19,6 +19,13 @@ import AdGateModal from '@/components/transform/AdGateModal';
 import { getOrCreateProfile, getRemainingToday, consumeTransformation } from '@/lib/usageLimit';
 import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt, buildKidsPrompt, buildPetPrompt } from '@/lib/faceSwapPrompt';
 
+const GENERATED_IMAGE_PATTERNS = ['generated_image', 'output.', 'chronos-booth', 'transformed', 'ai-generated', 'result'];
+function looksLikeGeneratedImage(url) {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  return GENERATED_IMAGE_PATTERNS.some(p => lower.includes(p));
+}
+
 const FREE_DAILY_LIMIT = 3;
 
 export default function Home() {
@@ -161,6 +168,21 @@ export default function Home() {
     setError(null);
 
     try {
+      // Step 0: Validate — reject generated images as references
+      const urlsToCheck = isPartnersMode
+        ? [photoUrlA, photoUrlB].filter(Boolean)
+        : isGroupMode
+        ? groupPhotos.map(p => p.url).filter(Boolean)
+        : [photoUrl].filter(Boolean);
+
+      for (const url of urlsToCheck) {
+        if (looksLikeGeneratedImage(url)) {
+          setError('Please upload original face photos, not previously generated ChronosBooth images. Generated images reduce face accuracy.');
+          setIsTransforming(false);
+          return;
+        }
+      }
+
       // Step 1: Upload photo(s)
       setTransformStep(1);
       let uploadedUrl;
@@ -248,7 +270,7 @@ export default function Home() {
           : baseEraPrompt;
         eraId = selectedEra?.id === 'custom' ? 'custom' : selectedEra?.id;
         eraLabel = selectedEra?.id === 'custom' ? (customEraText.slice(0, 30) || 'Custom Era') : selectedEra?.label;
-        finalPrompt = buildFaceSwapPrompt(eraPrompt);
+        finalPrompt = buildFaceSwapPrompt(eraPrompt, eraLabel);
       }
 
       // Step 3: Create DB record
@@ -267,9 +289,14 @@ export default function Home() {
         prompt: finalPrompt,
         original_photo_url: uploadedUrl,
         extra_photo_urls: extraUrls,
+        transformation_id: transformation.id,
       });
 
-      if (response.data?.error) throw new Error(response.data.error);
+      if (response.data?.error) {
+        // Mark the record as failed so it doesn't get stuck in processing
+        await base44.entities.Transformation.update(transformation.id, { status: 'failed' });
+        throw new Error(response.data.error);
+      }
 
       // Step 5: Save result
       setTransformStep(5);
@@ -336,7 +363,7 @@ export default function Home() {
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Group Photos (2–6 people)</p>
               <span className="text-xs text-muted-foreground">{groupPhotos.length}/6</span>
             </div>
-            <p className="text-xs text-muted-foreground mb-3">Upload 3–6 clear face photos. For best results, use one person per photo, front-facing, good lighting, no sunglasses, no heavy filters.</p>
+            <p className="text-xs text-muted-foreground mb-3">Upload one clear photo per person (2–6 people). Use front-facing photos with good lighting. Avoid sunglasses, heavy filters, hats, collages, screenshots, and group photos.</p>
             <GroupPhotoUploader
               photos={groupPhotos}
               onAdd={handleGroupAdd}
