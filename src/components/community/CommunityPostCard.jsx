@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Heart, MessageCircle, ChevronDown, ChevronUp, Send, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { base44 } from '@/api/base44Client';
+import ReportPostButton from '@/components/community/ReportPostButton';
 
 export default function CommunityPostCard({ post, currentUserEmail, onLikeToggle }) {
   const [showComments, setShowComments] = useState(false);
@@ -61,7 +62,7 @@ export default function CommunityPostCard({ post, currentUserEmail, onLikeToggle
       )}
 
       {/* Actions bar */}
-      <div className="flex items-center gap-4 px-4 py-3">
+      <div className="flex items-center gap-4 px-4 py-3 justify-between">
         <button
           onClick={() => onLikeToggle(post, hasLiked)}
           className="flex items-center gap-1.5 group"
@@ -80,6 +81,7 @@ export default function CommunityPostCard({ post, currentUserEmail, onLikeToggle
             {showComments ? <ChevronUp className="w-3 h-3 inline" /> : <ChevronDown className="w-3 h-3 inline" />}
           </span>
         </button>
+        <ReportPostButton postId={post.id} />
       </div>
 
       {/* Comments section */}

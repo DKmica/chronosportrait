@@ -1,0 +1,58 @@
+{
+  "name": "ChronosBooth",
+  "short_name": "ChronosBooth",
+  "description": "Transform yourself, your partner, or your whole crew into cinematic portraits from any era.",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f0b1a",
+  "theme_color": "#0f0b1a",
+  "id": "com.chronosbooth.app",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["photo", "entertainment", "social"],
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/home.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Home — Choose your era"
+    },
+    {
+      "src": "/screenshots/result.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Your AI portrait result"
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.chronosbooth.app",
+      "id": "com.chronosbooth.app"
+    }
+  ],
+  "prefer_related_applications": false
+}

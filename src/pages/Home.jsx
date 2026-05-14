@@ -26,6 +26,7 @@ import RewardedAdButton from '@/components/ads/RewardedAdButton';
 import { getOrCreateProfile, getRemainingToday, consumeTransformation, addBonusTransformation } from '@/lib/usageLimit';
 import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt, buildKidsPrompt, buildPetPrompt } from '@/lib/faceSwapPrompt';
 import { APP_NAME, APP_TAGLINE } from '@/lib/appConfig';
+import PhotoConsentBanner from '@/components/upload/PhotoConsentBanner';
 
 // Only flag clearly AI-generated filenames — avoid false positives on normal uploads
 const GENERATED_FILENAME_PATTERNS = ['generated_image', 'ai-generated'];
@@ -433,6 +434,9 @@ export default function Home() {
       </div>
 
       <div className="px-5 space-y-5">
+        {/* Photo upload consent — shown once */}
+        <PhotoConsentBanner />
+
         {/* Photo upload */}
         {isPartnersMode ? (
           <PartnersConfig

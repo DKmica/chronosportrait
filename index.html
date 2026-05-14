@@ -2,12 +2,36 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="https://base44.com/logo_v2.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Adaptive icon and touch icons -->
+    <link rel="icon" type="image/png" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+
+    <!-- Viewport: safe-area support for Android notch / edge-to-edge -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- PWA / Android TWA manifest -->
     <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#0f0b1a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="ChronosBooth" />
+
+    <!-- SEO / Social -->
     <title>ChronosBooth — The AI Time Machine</title>
     <meta name="description" content="Transform yourself, your partner, or your whole crew into cinematic portraits from any era with ChronosBooth." />
-    <!-- Google AdMob Script -->
+    <meta property="og:title" content="ChronosBooth — The AI Time Machine" />
+    <meta property="og:description" content="Step into any era with AI-powered historical portraits." />
+    <meta property="og:image" content="/icons/og-image.png" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!--
+      Google AdMob / GAM
+      TODO: Replace test AdMob App ID (ca-app-pub-3940256099942544~3347511713)
+            with your production AdMob App ID before publishing to Google Play.
+            Package name: com.chronosbooth.app
+    -->
     <script async src="https://securepubads.g.doubleclick.net/tag/js/gpt.js"></script>
     <script>
       window.googletag = window.googletag || {cmd: []};

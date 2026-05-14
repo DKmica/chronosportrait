@@ -10,6 +10,7 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { initAdMob } from '@/lib/admob';
 import AppLayout from '@/components/layout/AppLayout';
 import Home from '@/pages/Home.jsx';
+import OfflineBanner from '@/components/common/OfflineBanner';
 
 // Sync theme with system prefers-color-scheme
 function ThemeManager() {
@@ -44,6 +45,8 @@ const MyCollection = lazy(() => import('@/pages/MyCollection'));
 const Pricing = lazy(() => import('@/pages/Pricing.jsx'));
 const Admin = lazy(() => import('@/pages/Admin.jsx'));
 const StyleLora = lazy(() => import('@/pages/StyleLora.jsx'));
+const Support = lazy(() => import('@/pages/Support'));
+const DeleteAccount = lazy(() => import('@/pages/DeleteAccount'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -93,6 +96,8 @@ const AuthenticatedApp = () => {
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/admin" element={<Admin />} />
           <Route path="/style-lora" element={<StyleLora />} />
+          <Route path="/support" element={<Support />} />
+          <Route path="/delete-account" element={<DeleteAccount />} />
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>
@@ -112,6 +117,7 @@ function App() {
       <NavigationProvider>
         <QueryClientProvider client={queryClientInstance}>
           <ThemeManager />
+          <OfflineBanner />
           <Router>
             <AuthenticatedApp />
           </Router>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Crown, LogOut, ChevronRight, Sparkles, Shield, Star, Trash2, Zap, LayoutDashboard } from 'lucide-react';
+import { User, Crown, LogOut, ChevronRight, Sparkles, Shield, Star, Trash2, Zap, LayoutDashboard, HelpCircle, UserX } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
@@ -121,7 +121,7 @@ export default function Settings() {
               <User className="w-8 h-8 text-primary" />
             </div>
             <div>
-              <h2 className="font-display text-xl font-semibold text-foreground">Sign in to Chronos Booth</h2>
+              <h2 className="font-display text-xl font-semibold text-foreground">Sign in to ChronosBooth</h2>
               <p className="text-muted-foreground text-sm mt-1">Save your transformations, track your history, and unlock Pro features.</p>
             </div>
             <Button
@@ -315,7 +315,9 @@ export default function Settings() {
             </div>
             {[
               { icon: Shield, label: 'Privacy & Terms', action: () => navigate('/legal') },
-              { icon: Star, label: 'Rate the App', action: () => {} },
+              { icon: HelpCircle, label: 'Help & Support', action: () => navigate('/support') },
+              { icon: Star, label: 'Rate the App', action: () => window.open('https://play.google.com/store/apps/details?id=com.chronosbooth.app', '_blank') },
+              { icon: UserX, label: 'Delete My Account', action: () => navigate('/delete-account') },
             ].map(({ icon: Icon, label, action }) => (
               <button
                 key={label}
@@ -393,7 +395,7 @@ export default function Settings() {
             </AlertDialog>
           </motion.div>
 
-          <p className="text-center text-sm text-muted-foreground">Chronos Booth v1.0</p>
+          <p className="text-center text-sm text-muted-foreground">ChronosBooth v1.0.0 (1)</p>
         </div>
       )}
     </div>

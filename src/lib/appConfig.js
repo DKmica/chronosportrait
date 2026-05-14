@@ -39,12 +39,33 @@ export function showWatermark(plan) {
   return !isPro(plan);
 }
 
+// ─── App Build Info ──────────────────────────
+export const APP_PACKAGE = "com.chronosbooth.app";
+export const APP_VERSION_NAME = "1.0.0";
+export const APP_VERSION_CODE = 1;
+export const APP_MIN_SDK = 23;
+export const APP_COMPILE_SDK = 35;
+
 // ─── AdMob Config ────────────────────────────
-// TODO: Replace test AdMob IDs with production IDs before launch.
+// TODO (before Google Play release):
+//   1. Replace TEST app ID with your production AdMob App ID.
+//   2. Replace each TEST ad unit ID with your production ad unit IDs.
+//   3. Add the production AdMob App ID to AndroidManifest.xml:
+//      <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID"
+//                 android:value="ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX"/>
+//   Package: com.chronosbooth.app
 export const ADMOB_CONFIG = {
-  bannerAdUnitId: "TEST_BANNER_ID",
-  interstitialAdUnitId: "TEST_INTERSTITIAL_ID",
-  rewardedAdUnitId: "TEST_REWARDED_ID",
+  // Test App ID — replace with production: ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX
+  appId: "ca-app-pub-3940256099942544~3347511713",
+
+  // Test banner unit — replace with production banner unit ID
+  bannerAdUnitId: "ca-app-pub-3940256099942544/6300978111",
+
+  // Test interstitial unit — replace with production interstitial unit ID
+  interstitialAdUnitId: "ca-app-pub-3940256099942544/1033173712",
+
+  // Test rewarded unit — replace with production rewarded unit ID
+  rewardedAdUnitId: "ca-app-pub-3940256099942544/5224354917",
 };
 
 // ─── Download Filename ───────────────────────
