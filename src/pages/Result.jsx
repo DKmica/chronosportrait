@@ -19,10 +19,18 @@ export default function Result() {
   const [liveTransformation, setLiveTransformation] = useState(null);
   const [viewMode, setViewMode] = useState('result'); // 'result' | 'compare' | 'share'
 
-  const { data: transformation, isLoading } = useQuery({
+  const { data: transformation, isLoading, isError, error } = useQuery({
     queryKey: ['transformation', id],
+    enabled: !!id,
+    retry: false,
     queryFn: async () => {
       const res = await base44.functions.invoke('getTransformation', { id });
+      if (res.data?.error) {
+        throw new Error(res.data.error);
+      }
+      if (!res.data?.transformation) {
+        throw new Error('Transformation not found');
+      }
       return res.data.transformation;
     },
   });
@@ -36,10 +44,27 @@ export default function Result() {
     }
   }, [t?.id, t?.status]);
 
-  if (isLoading || !t) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (isError || !t) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-5 text-center">
+        <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center">
+          <ArrowLeft className="w-6 h-6 text-destructive" />
+        </div>
+        <div>
+          <h1 className="font-display text-xl font-semibold text-foreground">Transformation unavailable</h1>
+          <p className="text-sm text-muted-foreground mt-2">
+            {error?.message || 'We could not load this transformation. It may have been deleted or you may not have access.'}
+          </p>
+        </div>
+        <Button onClick={() => navigate('/')} className="rounded-xl">Back to Home</Button>
       </div>
     );
   }

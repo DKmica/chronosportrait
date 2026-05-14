@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Share2, Download, Instagram, Loader2 } from 'lucide-react';
+import { Share2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,

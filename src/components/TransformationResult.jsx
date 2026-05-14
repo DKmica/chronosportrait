@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Download, ArrowLeft, Share2, Sparkles, Loader2 } from "lucide-react";
+import { Download, ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function TransformationResult({ transformation, era, isLoading, onBack }) {

@@ -1,6 +1,5 @@
-import React, { useRef, useState } from "react";
-import { Camera, Upload, X, ImagePlus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React, { useRef } from "react";
+import { X, ImagePlus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) {

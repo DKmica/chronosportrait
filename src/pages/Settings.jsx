@@ -49,8 +49,8 @@ export default function Settings() {
   const plan = profile?.plan || 'free';
   const planInfo = PLAN_LABELS[plan];
 
-  const handleLogin = () => base44.auth.redirectToLogin();
-  const handleLogout = () => base44.auth.logout();
+  const handleLogin = () => base44.auth.redirectToLogin(window.location.href);
+  const handleLogout = () => base44.auth.logout(window.location.href);
   
   const handleDeleteAccount = async () => {
     setDeleting(true);
@@ -61,7 +61,7 @@ export default function Settings() {
         await base44.entities.UserProfile.delete(profile.id);
       }
       // Logout user
-      base44.auth.logout();
+      base44.auth.logout(window.location.href);
     } catch (error) {
       console.error('Delete account error:', error);
       setDeleteError('Failed to delete account. Please try again.');
