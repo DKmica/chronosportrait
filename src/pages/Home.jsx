@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Clock, ChevronRight, Lock, Users } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Sparkles, Clock, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { ERAS } from '@/lib/eras';
-import { SPECIAL_MODES } from '@/lib/specialModes';
+import { AD_GATED_MODES, SPECIAL_MODES } from '@/lib/specialModes';
 import EraCard from '@/components/transform/EraCard';
 import CustomEraCard from '@/components/transform/CustomEraCard';
 import PhotoUploader from '@/components/transform/PhotoUploader';
@@ -113,8 +113,7 @@ export default function Home() {
   };
 
   const handleModeSelect = (modeId) => {
-    const mode = SPECIAL_MODES.find(m => m.id === modeId);
-    if (mode?.requiresAd && (!userProfile || userProfile.plan === 'free')) {
+    if (AD_GATED_MODES.includes(modeId) && (!userProfile || userProfile.plan === 'free')) {
       setAdGateMode(modeId);
       return;
     }
@@ -137,7 +136,7 @@ export default function Home() {
     try {
       // Step 1: Upload photo(s)
       setTransformStep(1);
-      let uploadedUrl = photoUrl;
+      let uploadedUrl = isPartnersMode ? photoUrlA : photoUrl;
       if (!uploadedUrl) {
         const { file_url } = await base44.integrations.Core.UploadFile({ file: isPartnersMode ? photoA : photo });
         uploadedUrl = file_url;
@@ -158,7 +157,11 @@ export default function Home() {
 
       // Step 2: Build prompt
       setTransformStep(2);
-      const eraPrompt = selectedEra?.id === 'custom' ? customEraText : selectedEra?.prompt;
+      const baseEraPrompt = selectedEra?.id === 'custom' ? customEraText : selectedEra?.prompt;
+      const selectedModeConfig = SPECIAL_MODES.find(mode => mode.id === selectedMode);
+      const eraPrompt = selectedModeConfig?.promptPrefix && !isPartnersMode
+        ? `${selectedModeConfig.promptPrefix}${baseEraPrompt}`
+        : baseEraPrompt;
       const stylePrompt = STYLE_PROMPTS[selectedStyle] || '';
 
       let finalPrompt;
@@ -293,7 +296,7 @@ export default function Home() {
             ))}
             <CustomEraCard
               isSelected={selectedEra?.id === 'custom'}
-              onSelect={() => setSelectedEra({ id: 'custom', label: 'Custom Era' })}
+              onClick={() => setSelectedEra({ id: 'custom', label: 'Custom Era' })}
             />
           </div>
           {selectedEra?.id === 'custom' && (

@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Wand2, X } from 'lucide-react';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Wand2 } from 'lucide-react';
 
-export default function CustomEraCard({ isSelected, onClick, onDescriptionChange, description }) {
+export default function CustomEraCard({ isSelected, onClick }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}

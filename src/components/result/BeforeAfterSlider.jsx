@@ -1,5 +1,4 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { motion } from 'framer-motion';
 
 export default function BeforeAfterSlider({ beforeUrl, afterUrl, label }) {
   const [position, setPosition] = useState(50);

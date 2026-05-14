@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Camera, ImagePlus, X, Plus } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function GroupPhotoUploader({ photos, onAdd, onRemove }) {

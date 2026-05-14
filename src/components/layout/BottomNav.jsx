@@ -1,6 +1,6 @@
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Image, Sparkles, Users, Settings, Zap, Package } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { Sparkles, Users, Settings, Zap, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTabNavigation } from '@/lib/NavigationContext';
 

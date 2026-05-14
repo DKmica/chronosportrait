@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Download, Copy, Share2, RefreshCw, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,7 @@ function pickCaption(templates, eraLabel) {
   return t.replace('{era}', eraLabel);
 }
 
-export default function ViralShareCard({ transformation, onClose }) {
+export default function ViralShareCard({ transformation }) {
   const [platform, setPlatform] = useState('instagram');
   const [caption, setCaption] = useState(() =>
     pickCaption(IG_CAPTIONS, transformation?.era_label || 'this era')
@@ -58,7 +58,7 @@ Return ONLY the caption text, no extra explanation.`,
       });
       setCaption(response);
       setAiCaption(true);
-    } catch (_) {
+    } catch {
       setCaption(pickCaption(platform === 'tiktok' ? TIKTOK_CAPTIONS : platform === 'facebook' ? FB_CAPTIONS : IG_CAPTIONS, eraLabel));
     }
     setGeneratingCaption(false);

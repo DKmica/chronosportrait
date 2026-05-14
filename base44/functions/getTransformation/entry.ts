@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing transformation id' }, { status: 400 });
     }
 
-    const results = await base44.asServiceRole.entities.Transformation.filter({ id });
+    const results = await base44.entities.Transformation.filter({ id });
     const transformation = results[0] || null;
 
     if (!transformation) {

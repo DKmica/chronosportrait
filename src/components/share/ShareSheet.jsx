@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, Link2, Instagram, Facebook, Twitter, Check, Loader2, Share2 } from 'lucide-react';
+import { Download, Link2, Check, Loader2, Share2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 
@@ -51,7 +51,7 @@ export default function ShareSheet({ open, onOpenChange, transformation }) {
     if (navigator.share) {
       try {
         await navigator.share({ title: `My ${eraLabel} portrait`, text: caption, url: publicLink });
-      } catch (_) {}
+      } catch {}
     }
   };
 
