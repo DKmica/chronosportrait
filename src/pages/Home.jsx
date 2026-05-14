@@ -15,6 +15,7 @@ import SpecialModeBar from '@/components/transform/SpecialModeBar';
 import ScenarioSelector from '@/components/transform/ScenarioSelector';
 import GroupPhotoUploader from '@/components/transform/GroupPhotoUploader';
 import LimitBanner from '@/components/transform/LimitBanner';
+import SpotlightSection from '@/components/community/SpotlightSection';
 import AdGateModal from '@/components/transform/AdGateModal';
 import { getOrCreateProfile, getRemainingToday, consumeTransformation, addBonusTransformation } from '@/lib/usageLimit';
 import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt, buildKidsPrompt, buildPetPrompt } from '@/lib/faceSwapPrompt';
@@ -365,6 +366,9 @@ export default function Home() {
       <div className="px-5 mb-3">
         <LimitBanner remaining={remaining} timeUntilReset={timeUntilReset} profile={userProfile} onShareForBonus={handleShareForBonus} />
       </div>
+
+      {/* Community Spotlight */}
+      <SpotlightSection />
 
       {/* Special mode bar */}
       <div className="mb-4">

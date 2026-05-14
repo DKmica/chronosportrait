@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Download, RotateCcw, Share2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Download, RotateCcw, Share2, AlertTriangle, Globe, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import VideoGenerator from '@/components/result/VideoGenerator';
 import ShareToCommunityButton from '@/components/community/ShareToCommmunityButton';
@@ -21,6 +21,9 @@ export default function Result() {
   const [liveTransformation, setLiveTransformation] = useState(null);
   const [viewMode, setViewMode] = useState('result'); // 'result' | 'compare' | 'share'
   const [isStuck, setIsStuck] = useState(false);
+  const [spotlightOptIn, setSpotlightOptIn] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [sharedToSpotlight, setSharedToSpotlight] = useState(false);
 
   const { data: transformation, isLoading, isError, error } = useQuery({
     queryKey: ['transformation', id],
@@ -65,6 +68,24 @@ export default function Result() {
     if (!t) return;
     // Navigate home pre-seeding era so user can re-use the same era
     navigate(`/?era=${encodeURIComponent(t.era || '')}`);
+  };
+
+  const handleSpotlightOptIn = async (checked) => {
+    setSpotlightOptIn(checked);
+    if (checked && t?.status === 'completed' && t?.transformed_photo_url && !sharedToSpotlight) {
+      setIsSharing(true);
+      const user = await base44.auth.me().catch(() => null);
+      await base44.entities.CommunityPost.create({
+        transformation_id: t.id,
+        image_url: t.transformed_photo_url,
+        era_label: t.era_label,
+        author_name: user?.full_name || 'Anonymous',
+        likes_count: 0,
+        liked_by: [],
+      });
+      setIsSharing(false);
+      setSharedToSpotlight(true);
+    }
   };
 
   if (isLoading) {
@@ -243,6 +264,36 @@ export default function Result() {
         {t.status === 'completed' && t.transformed_photo_url && (
           <>
             <SocialDeeplinks transformation={t} />
+
+            {/* Community Spotlight opt-in */}
+            <div
+              onClick={() => !sharedToSpotlight && handleSpotlightOptIn(!spotlightOptIn)}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-all cursor-pointer select-none ${
+                spotlightOptIn
+                  ? 'border-primary/60 bg-primary/10'
+                  : 'border-border bg-secondary/40'
+              } ${sharedToSpotlight ? 'opacity-75 cursor-default' : ''}`}
+            >
+              <div className={`w-5 h-5 rounded flex-shrink-0 border-2 flex items-center justify-center transition-all ${
+                spotlightOptIn ? 'bg-primary border-primary' : 'border-muted-foreground/40'
+              }`}>
+                {spotlightOptIn && <span className="text-primary-foreground text-xs font-bold">✓</span>}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-primary inline" />
+                  Feature in Community Spotlight
+                  {isSharing && <Loader2 className="w-3 h-3 animate-spin text-primary" />}
+                  {sharedToSpotlight && <span className="text-[10px] text-primary font-semibold bg-primary/10 px-1.5 py-0.5 rounded-full">Live!</span>}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {sharedToSpotlight
+                    ? 'Your portrait is featured on the home page spotlight.'
+                    : 'Let others discover your portrait on the home page.'}
+                </p>
+              </div>
+            </div>
+
             <ShareToCommunityButton transformation={t} />
           </>
         )}
