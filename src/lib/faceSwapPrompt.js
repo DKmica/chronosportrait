@@ -48,8 +48,9 @@ Two reference photos are provided — one per person.
 - Preserve each person's: face shape, bone structure, eye color, skin tone, age, and all distinguishing features.
 - Show "two people standing together" — each with their own identity, no assumptions about gender or relationship roles.
 - ONLY change: clothing/costume, hairstyle, background, lighting, and era-appropriate props.
+- CRITICAL PROPORTIONS: Both people must have anatomically correct and proportional heads relative to their bodies. Head size must be natural and realistic — NOT oversized, NOT too small. Both figures must have identical scale and perspective consistency.
 - Ultra high-fidelity faces, photorealistic, 8K detail.
-- Negative: ${NEGATIVE_PROMPT}
+- Negative: ${NEGATIVE_PROMPT}, disproportionate head, oversized head, big head, head too large, unequal proportions
 
 ERA TRANSFORMATION:
 ${eraPrompt}
