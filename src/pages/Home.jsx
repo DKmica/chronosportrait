@@ -83,6 +83,8 @@ export default function Home() {
   const [adGateMode, setAdGateMode] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
 
+  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
+
   // Pull-to-refresh
   const PULL_THRESHOLD = 70;
   const [pullY, setPullY] = useState(0);
@@ -116,8 +118,6 @@ export default function Home() {
 
   // Countdown timer
   const [timeUntilReset, setTimeUntilReset] = useState('');
-
-  const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
 
   useEffect(() => {
     if (user?.email) {
