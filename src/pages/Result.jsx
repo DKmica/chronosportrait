@@ -156,13 +156,9 @@ export default function Result() {
 
   return (
     <div className="min-h-screen pb-12">
-      {/* Header */}
-      <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4 flex items-center justify-between">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2">
-          <ArrowLeft className="w-5 h-5 text-foreground" />
-        </button>
-        <h1 className="font-display text-lg font-semibold">{t.era_label}</h1>
-        <div className="w-9" />
+      {/* Era title */}
+      <div className="px-5 pt-3 pb-2">
+        <h2 className="font-display text-lg font-semibold text-center text-foreground">{t.era_label}</h2>
       </div>
 
       {/* View mode tabs */}

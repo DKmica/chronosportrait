@@ -104,14 +104,9 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4">
-        <h1 className="font-display text-2xl font-bold text-foreground">Settings</h1>
-      </div>
-
       {/* Not signed in */}
       {!isAuthenticated ? (
-        <div className="px-5 mt-8">
+        <div className="px-5 mt-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

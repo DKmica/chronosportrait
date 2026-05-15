@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, Clock, ChevronRight } from 'lucide-react';
+import { Sparkles, Clock, ChevronRight, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ERAS } from '@/lib/eras';
 import { AD_GATED_MODES, SPECIAL_MODES, KID_SCENARIOS, PET_SCENARIOS } from '@/lib/specialModes';
 import EraCard from '@/components/transform/EraCard';
@@ -82,6 +82,37 @@ export default function Home() {
   const [error, setError] = useState(null);
   const [adGateMode, setAdGateMode] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
+
+  // Pull-to-refresh
+  const PULL_THRESHOLD = 70;
+  const [pullY, setPullY] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const touchStartY = useRef(null);
+  const queryClient = useQueryClient();
+
+  const handleTouchStart = useCallback((e) => {
+    if (window.scrollY === 0) touchStartY.current = e.touches[0].clientY;
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (touchStartY.current === null) return;
+    const delta = e.touches[0].clientY - touchStartY.current;
+    if (delta > 0) setPullY(Math.min(delta * 0.5, PULL_THRESHOLD));
+  }, []);
+
+  const handleTouchEnd = useCallback(async () => {
+    if (pullY >= PULL_THRESHOLD) {
+      setRefreshing(true);
+      await queryClient.invalidateQueries({ queryKey: ['community-posts'] });
+      if (user?.email) {
+        const updated = await getOrCreateProfile(user.email);
+        setUserProfile(updated);
+      }
+      setRefreshing(false);
+    }
+    setPullY(0);
+    touchStartY.current = null;
+  }, [pullY, queryClient, user?.email]);
 
   // Countdown timer
   const [timeUntilReset, setTimeUntilReset] = useState('');
@@ -388,7 +419,20 @@ export default function Home() {
   const STEPS = ['', 'Uploading photo…', 'Building prompt…', 'Preparing…', 'Generating portrait…', 'Finalizing…'];
 
   return (
-    <div className="min-h-screen pb-24">
+    <div
+      className="min-h-screen pb-24"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull to refresh indicator */}
+      <motion.div
+        animate={{ height: pullY > 0 || refreshing ? 44 : 0, opacity: pullY > 0 || refreshing ? 1 : 0 }}
+        className="flex items-center justify-center overflow-hidden"
+      >
+        <RefreshCw className={`w-5 h-5 text-primary ${refreshing ? 'animate-spin' : ''}`} />
+      </motion.div>
+
       {/* Header */}
       <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-2">
         <div className="flex items-center justify-between mb-1">

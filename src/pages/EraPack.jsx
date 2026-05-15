@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Sparkles, Lock, ChevronRight, CheckCircle2, Loader2 } from 'lucide-react';
+import { Sparkles, Lock, ChevronRight, CheckCircle2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
@@ -112,18 +112,8 @@ export default function EraPack() {
 
   return (
     <div className="min-h-screen pb-24">
-      {/* Header */}
-      <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4 flex items-center gap-3">
-        <button onClick={() => navigate('/')} className="p-2 -ml-2">
-          <ArrowLeft className="w-5 h-5 text-foreground" />
-        </button>
-        <div>
-          <h1 className="font-display text-xl font-bold text-foreground">Era Packs</h1>
-          <p className="text-muted-foreground text-xs">Generate a themed portrait collection</p>
-        </div>
-      </div>
-
-      <div className="px-5 space-y-5">
+      <div className="px-5 pt-2 space-y-5">
+        <p className="text-muted-foreground text-xs">Generate a themed portrait collection</p>
         {/* Photo upload */}
         <div>
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Your Photo</p>

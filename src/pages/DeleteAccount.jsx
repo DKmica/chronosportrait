@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Trash2, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
@@ -49,15 +49,7 @@ export default function DeleteAccount() {
 
   return (
     <div className="min-h-screen pb-12">
-      {/* Header */}
-      <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4 flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 -ml-2">
-          <ArrowLeft className="w-5 h-5 text-foreground" />
-        </button>
-        <h1 className="font-display text-xl font-bold text-foreground">Delete My Account</h1>
-      </div>
-
-      <div className="px-5 space-y-5">
+      <div className="px-5 pt-3 space-y-5">
         {done ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}

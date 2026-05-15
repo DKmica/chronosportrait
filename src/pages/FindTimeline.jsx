@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, ArrowLeft, Zap, RefreshCw } from 'lucide-react';
+import { Sparkles, Zap, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import PhotoUploader from '@/components/transform/PhotoUploader';
@@ -213,15 +213,8 @@ Be dramatic and poetic. Make the user feel the result is uniquely personal.`,
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <div className="px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-4 flex items-center gap-3">
-        <button onClick={() => navigate('/')} className="p-2 -ml-2">
-          <ArrowLeft className="w-5 h-5 text-foreground" />
-        </button>
-        <div>
-          <h1 className="font-display text-xl font-bold text-foreground">Find Your Timeline</h1>
-          <p className="text-muted-foreground text-sm">AI reveals your true era</p>
-        </div>
+      <div className="px-5 pt-2 pb-1">
+        <p className="text-muted-foreground text-sm">AI reveals your true era</p>
       </div>
 
       <AnimatePresence mode="wait">
