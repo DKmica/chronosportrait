@@ -87,11 +87,11 @@ export default function StyleLora() {
       status: 'pending',
     });
 
-    // Kick off training
-    await base44.functions.invoke('trainStyleLora', {
+    // Kick off training — fire and forget (Gemini analysis can take 30–60s)
+    base44.functions.invoke('trainStyleLora', {
       lora_id: lora.id,
       photo_urls: uploaded,
-    });
+    }).catch(e => console.error('trainStyleLora error:', e));
 
     setTraining(false);
     setCreating(false);
