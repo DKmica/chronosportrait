@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-const GEMINI_MODEL = 'gemini-2.5-flash-image';
+const GEMINI_MODEL = 'gemini-2.0-flash-exp';
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 const MAX_PEOPLE = 10;
@@ -81,7 +81,7 @@ async function generateMultiPerson(base44, allPhotoUrls, prompt) {
   parts.push({ text: `I am uploading exactly ${personCount} reference photo${personCount === 1 ? '' : 's'} below, one per person. Each person must appear exactly once in the output.\n` });
 
   for (let i = 0; i < images.length; i++) {
-    parts.push({ text: `--- PERSON ${i + 1} OF ${personCount} (Reference Image ${i + 1}) ---` });
+    parts.push({ text: `--- PERSON ${i + 1} OF ${personCount} ---\nIMPORTANT: Copy this person's exact face into the output. Preserve their face shape, eyes, nose, mouth, skin tone, age, and all unique features. This is Person ${i + 1} — do not change, merge, or replace their face.` });
     parts.push({ inlineData: { mimeType: images[i].mimeType, data: images[i].base64 } });
   }
 
