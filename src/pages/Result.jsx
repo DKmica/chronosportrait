@@ -264,7 +264,7 @@ export default function Result() {
       {/* Actions */}
       {t.status === 'completed' && t.transformed_photo_url && (
         <div className="px-5 mt-4 space-y-3">
-          {/* Primary actions: Download + Share (one SharePanel) */}
+          {/* Primary actions: Download + Share */}
           <div className="flex gap-3">
             <Button
               variant="outline"
@@ -275,6 +275,51 @@ export default function Result() {
               {needsWatermark ? 'Download' : 'Save HD'}
             </Button>
             <SharePanel transformation={t} showWatermark={needsWatermark} />
+          </div>
+
+          {/* Quick social share buttons */}
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              onClick={async () => {
+                const res = await fetch(t.transformed_photo_url);
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `chronosbooth-${(t.era_label||'portrait').toLowerCase().replace(/\s+/g,'-')}.jpg`; a.click();
+                URL.revokeObjectURL(url);
+                setTimeout(() => { window.location.href = 'instagram://library'; }, 800);
+              }}
+              className="flex items-center justify-center gap-2 h-11 rounded-xl border border-border bg-gradient-to-r from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20 transition-colors"
+            >
+              <span className="text-lg">📸</span>
+              <span className="text-xs font-semibold text-foreground">Instagram</span>
+            </button>
+            <button
+              onClick={async () => {
+                const res = await fetch(t.transformed_photo_url);
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url; a.download = `chronosbooth-${(t.era_label||'portrait').toLowerCase().replace(/\s+/g,'-')}.jpg`; a.click();
+                URL.revokeObjectURL(url);
+                setTimeout(() => { window.location.href = 'tiktok://'; }, 800);
+              }}
+              className="flex items-center justify-center gap-2 h-11 rounded-xl border border-border bg-secondary/60 hover:bg-secondary transition-colors"
+            >
+              <span className="text-lg">🎵</span>
+              <span className="text-xs font-semibold text-foreground">TikTok</span>
+            </button>
+            <button
+              onClick={() => {
+                const publicLink = `${window.location.origin}/result/${t.id}`;
+                const caption = `Check out my ${t.era_label} portrait made with ChronosBooth! 🎨`;
+                window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(publicLink)}&quote=${encodeURIComponent(caption)}`, '_blank', 'width=600,height=400');
+              }}
+              className="flex items-center justify-center gap-2 h-11 rounded-xl border border-border bg-blue-500/10 hover:bg-blue-500/20 transition-colors"
+            >
+              <span className="text-lg">👥</span>
+              <span className="text-xs font-semibold text-foreground">Facebook</span>
+            </button>
           </div>
 
           {/* Pro upsell for free users */}
