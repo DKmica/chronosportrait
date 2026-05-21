@@ -519,10 +519,8 @@ export default function Home() {
           </div>
         )}
 
-        {/* LoRA model selector (solo mode only) */}
-        {!isPartnersMode && !isKidsMode && !isPetMode && !isGroupMode && (
-          <LoraSelector selectedLoraId={selectedLoraId} onSelect={setSelectedLoraId} />
-        )}
+        {/* LoRA model selector (all modes) */}
+        <LoraSelector selectedLoraId={selectedLoraId} onSelect={setSelectedLoraId} />
 
         {/* Kids scenario selector */}
         {isKidsMode && (
