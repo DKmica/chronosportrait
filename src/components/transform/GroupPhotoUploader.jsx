@@ -35,7 +35,7 @@ export default function GroupPhotoUploader({ photos, onAdd, onRemove, onReorder,
 
   return (
     <div className="space-y-3">
-      <input ref={inputRef} type="file" accept="image/*" multiple onChange={handleFiles} style={{ display: 'none' }} />
+      <input id="group-photo-input" ref={inputRef} type="file" accept="image/*" multiple onChange={handleFiles} style={{ display: 'none' }} />
 
       {/* Layout toggle */}
       {photos.length >= 2 && (
@@ -123,9 +123,9 @@ export default function GroupPhotoUploader({ photos, onAdd, onRemove, onReorder,
 
       {/* Add button */}
       {photos.length < maxPhotos && (
-        <button
-          onClick={() => inputRef.current?.click()}
-          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40 transition-colors"
+        <label
+          htmlFor="group-photo-input"
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4 text-muted-foreground" />
           <span className="text-sm text-muted-foreground font-medium">
@@ -133,7 +133,7 @@ export default function GroupPhotoUploader({ photos, onAdd, onRemove, onReorder,
               ? 'Add photos (2–10 people)'
               : `Add more (${maxPhotos - photos.length} remaining)`}
           </span>
-        </button>
+        </label>
       )}
 
       {photos.length > 0 && (

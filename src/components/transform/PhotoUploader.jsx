@@ -1,10 +1,11 @@
-import React, { useRef } from 'react';
+import React, { useId } from 'react';
 import { Camera, ImagePlus, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) {
-  const fileInputRef = useRef(null);
-  const cameraInputRef = useRef(null);
+  const uid = useId();
+  const fileId = `photo-file-${uid}`;
+  const cameraId = `photo-camera-${uid}`;
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
@@ -17,8 +18,8 @@ export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) 
   return (
     <div className="relative flex flex-col items-center gap-4">
       {/* Hidden inputs */}
-      <input id="photo-file-input" ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
-      <input id="photo-camera-input" ref={cameraInputRef} type="file" accept="image/*" capture="user" onChange={handleFileChange} style={{ display: 'none' }} />
+      <input id={fileId} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+      <input id={cameraId} type="file" accept="image/*" capture="user" onChange={handleFileChange} style={{ display: 'none' }} />
 
       <AnimatePresence mode="wait">
         {photoPreview ? (
@@ -39,8 +40,8 @@ export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) 
           </motion.div>
         ) : (
           <label
-            htmlFor="photo-file-input"
             key="upload"
+            htmlFor={fileId}
             className="w-full max-w-[280px] aspect-square rounded-2xl border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-4 bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
           >
             <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center">
@@ -55,14 +56,14 @@ export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) 
       {!photoPreview && (
         <div className="flex gap-3 w-full max-w-[280px]">
           <label
-            htmlFor="photo-camera-input"
+            htmlFor={cameraId}
             className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors cursor-pointer"
           >
             <Camera className="w-4 h-4" />
             Take Photo
           </label>
           <label
-            htmlFor="photo-file-input"
+            htmlFor={fileId}
             className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-secondary text-secondary-foreground font-medium text-sm hover:bg-secondary/80 transition-colors cursor-pointer"
           >
             <ImagePlus className="w-4 h-4" />

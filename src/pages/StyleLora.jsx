@@ -232,7 +232,7 @@ export default function StyleLora() {
                   Use clear face photos: different angles, expressions, lighting. Avoid sunglasses, heavy makeup, hats, or blurry images.
                 </p>
 
-                <input ref={inputRef} type="file" accept="image/*" multiple onChange={handleFileChange} style={{ display: 'none' }} />
+                <input id="lora-photo-input" ref={inputRef} type="file" accept="image/*" multiple onChange={handleFileChange} style={{ display: 'none' }} />
 
                 {/* Photo grid */}
                 {photos.length > 0 && (
@@ -260,15 +260,15 @@ export default function StyleLora() {
                 )}
 
                 {photos.length < MAX_PHOTOS && (
-                  <button
-                    onClick={() => inputRef.current?.click()}
-                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40 transition-colors"
+                  <label
+                    htmlFor="lora-photo-input"
+                    className="w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed border-muted-foreground/30 bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer"
                   >
                     <Camera className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm text-muted-foreground">
                       {photos.length === 0 ? 'Upload 5–10 face photos' : `Add more (${MAX_PHOTOS - photos.length} remaining)`}
                     </span>
-                  </button>
+                  </label>
                 )}
 
                 {/* Progress bar */}
