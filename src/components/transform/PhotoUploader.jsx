@@ -17,8 +17,8 @@ export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) 
   return (
     <div className="relative flex flex-col items-center gap-4">
       {/* Hidden inputs */}
-      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
-      <input ref={cameraInputRef} type="file" accept="image/*" capture="user" onChange={handleFileChange} style={{ display: 'none' }} />
+      <input id="photo-file-input" ref={fileInputRef} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
+      <input id="photo-camera-input" ref={cameraInputRef} type="file" accept="image/*" capture="user" onChange={handleFileChange} style={{ display: 'none' }} />
 
       <AnimatePresence mode="wait">
         {photoPreview ? (
@@ -38,38 +38,36 @@ export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) 
             </button>
           </motion.div>
         ) : (
-          <motion.div
+          <label
+            htmlFor="photo-file-input"
             key="upload"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="w-full max-w-[280px] aspect-square rounded-2xl border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-4 bg-muted/30"
+            className="w-full max-w-[280px] aspect-square rounded-2xl border-2 border-dashed border-muted-foreground/30 flex flex-col items-center justify-center gap-4 bg-muted/30 cursor-pointer hover:bg-muted/50 transition-colors"
           >
             <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center">
               <Camera className="w-7 h-7 text-primary" />
             </div>
             <p className="text-foreground font-medium text-sm">Add a photo</p>
-          </motion.div>
+          </label>
         )}
       </AnimatePresence>
 
       {/* Action buttons */}
       {!photoPreview && (
         <div className="flex gap-3 w-full max-w-[280px]">
-          <button
-            onClick={() => cameraInputRef.current?.click()}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors"
+          <label
+            htmlFor="photo-camera-input"
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-colors cursor-pointer"
           >
             <Camera className="w-4 h-4" />
             Take Photo
-          </button>
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-secondary text-secondary-foreground font-medium text-sm hover:bg-secondary/80 transition-colors"
+          </label>
+          <label
+            htmlFor="photo-file-input"
+            className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-secondary text-secondary-foreground font-medium text-sm hover:bg-secondary/80 transition-colors cursor-pointer"
           >
             <ImagePlus className="w-4 h-4" />
             Upload
-          </button>
+          </label>
         </div>
       )}
     </div>
