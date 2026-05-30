@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-const GEMINI_MODEL = 'gemini-2.0-flash-exp';
+const GEMINI_MODEL = 'gemini-2.5-flash-image';
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 const MAX_PEOPLE = 10;
@@ -128,6 +128,7 @@ Deno.serve(async (req) => {
     } catch (e) {
       console.log('Body parse error:', e.message);
     }
+
 
     const { prompt, original_photo_url, extra_photo_urls = [], transformation_id } = body;
     const personCount = 1 + extra_photo_urls.length;
