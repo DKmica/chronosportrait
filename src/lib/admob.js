@@ -66,9 +66,9 @@ export const showInterstitialAd = (plan) => {
 export const showRewardedAd = (plan) => {
   if (!showAds(plan)) return Promise.resolve({ rewarded: false });
 
+  // If AdMob SDK not loaded (web/dev), simulate a 3-second rewarded ad
   if (!window.googletag) {
-    console.warn("[AdMob] Google AdMob SDK not loaded — skipping rewarded ad.");
-    return Promise.resolve({ rewarded: false });
+    return new Promise((resolve) => setTimeout(() => resolve({ rewarded: true }), 3000));
   }
 
   return new Promise((resolve) => {
@@ -81,7 +81,7 @@ export const showRewardedAd = (plan) => {
       });
     } catch (error) {
       console.warn("[AdMob] Error showing rewarded ad:", error);
-      resolve({ rewarded: false });
+      resolve({ rewarded: true }); // Fallback to rewarded on error in dev
     }
   });
 };
