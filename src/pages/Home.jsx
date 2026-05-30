@@ -389,9 +389,8 @@ export default function Home() {
       });
 
       if (response.data?.error) {
-        // Mark the record as failed so it doesn't get stuck in processing
         await base44.entities.Transformation.update(transformation.id, { status: 'failed' });
-        throw new Error(response.data.error);
+        throw new Error(response.data.error || response.data.raw_error || 'Generation failed. Please try again.');
       }
 
       // Step 5: Save result
@@ -409,9 +408,6 @@ export default function Home() {
       navigate(`/result/${transformation.id}`);
     } catch (err) {
       let msg = err.message || 'Transformation failed. Please try again.';
-      if (msg.includes('400') || msg.toLowerCase().includes('request failed')) {
-        msg = 'Generation request failed. Please try again with clear, original face photos. Avoid screenshots, collages, generated images, or group photos.';
-      }
       setError(msg);
       setIsTransforming(false);
       setTransformStep(0);
