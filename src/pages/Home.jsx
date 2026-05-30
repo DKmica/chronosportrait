@@ -25,6 +25,7 @@ import BannerAd from '@/components/ads/BannerAd';
 import RewardedAdButton from '@/components/ads/RewardedAdButton';
 import { getOrCreateProfile, getRemainingToday, consumeTransformation, addBonusTransformation } from '@/lib/usageLimit';
 import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt, buildKidsPrompt, buildPetPrompt } from '@/lib/faceSwapPrompt';
+import { COUPLES_ERAS } from '@/lib/couplesEras';
 import { APP_NAME, APP_TAGLINE } from '@/lib/appConfig';
 import PhotoConsentBanner from '@/components/upload/PhotoConsentBanner';
 
@@ -211,6 +212,7 @@ export default function Home() {
       return;
     }
     setSelectedMode(modeId);
+    setSelectedEra(null); // reset era when switching modes
   };
 
   const handleGroupAdd = (file, preview) => {
@@ -550,13 +552,17 @@ export default function Home() {
         {!isKidsMode && !isPetMode && (
           <div>
             <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Choose Your Era</p>
-              <button onClick={() => navigate('/era-pack')} className="text-xs text-primary font-semibold flex items-center gap-1">
-                Era Packs <ChevronRight className="w-3.5 h-3.5" />
-              </button>
+              <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                {isPartnersMode ? 'Choose a Couples Scene' : 'Choose Your Era'}
+              </p>
+              {!isPartnersMode && (
+                <button onClick={() => navigate('/era-pack')} className="text-xs text-primary font-semibold flex items-center gap-1">
+                  Era Packs <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
             <div className="grid grid-cols-2 gap-3">
-              {ERAS.map((era, i) => (
+              {(isPartnersMode ? COUPLES_ERAS : ERAS).map((era, i) => (
                 <EraCard
                   key={era.id}
                   era={era}

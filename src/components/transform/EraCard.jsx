@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
+const ERA_EMOJIS = ['💑','👑','⚔️','🎭','🏴‍☠️','🌹','🎷','🎬','☮️','🌊','🪓','🌌','🏰','🧝','🚀'];
+
 export default function EraCard({ era, isSelected, onClick, index }) {
+  const hasImage = !!era.image;
   return (
     <motion.button
       initial={{ opacity: 0, y: 20 }}
@@ -12,11 +15,17 @@ export default function EraCard({ era, isSelected, onClick, index }) {
         isSelected ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
       }`}
     >
-      <img
-        src={era.image}
-        alt={era.label}
-        className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-      />
+      {hasImage ? (
+        <img
+          src={era.image}
+          alt={era.label}
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+        />
+      ) : (
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-accent/10 to-secondary flex items-center justify-center">
+          <span className="text-4xl">{ERA_EMOJIS[index % ERA_EMOJIS.length]}</span>
+        </div>
+      )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
       <div className="absolute bottom-0 left-0 right-0 p-3">
         <p className="text-white font-display text-sm font-semibold leading-tight">
