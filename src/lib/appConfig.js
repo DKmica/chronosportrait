@@ -61,10 +61,10 @@ export const ADMOB_CONFIG = {
   // Production banner unit
   bannerAdUnitId: "ca-app-pub-2828628272233541/8788993419",
 
-  // Test interstitial unit — replace with production interstitial unit ID
-  interstitialAdUnitId: "ca-app-pub-3940256099942544/1033173712",
+  // Production interstitial unit
+  interstitialAdUnitId: "ca-app-pub-2828628272233541/6652613807",
 
-  // Test rewarded unit — replace with production rewarded unit ID
+  // Production rewarded unit
   rewardedAdUnitId: "ca-app-pub-3940256099942544/5224354917",
 };
 
