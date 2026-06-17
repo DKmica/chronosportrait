@@ -55,11 +55,11 @@ export const APP_COMPILE_SDK = 35;
 //                 android:value="ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX"/>
 //   Package: com.chronosbooth.app
 export const ADMOB_CONFIG = {
-  // Test App ID — replace with production: ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX
-  appId: "ca-app-pub-3940256099942544~3347511713",
+  // Production App ID
+  appId: "ca-app-pub-2828628272233541~1612335266",
 
-  // Test banner unit — replace with production banner unit ID
-  bannerAdUnitId: "ca-app-pub-3940256099942544/6300978111",
+  // Production banner unit
+  bannerAdUnitId: "ca-app-pub-2828628272233541/8788993419",
 
   // Test interstitial unit — replace with production interstitial unit ID
   interstitialAdUnitId: "ca-app-pub-3940256099942544/1033173712",
