@@ -65,7 +65,7 @@ export const ADMOB_CONFIG = {
   interstitialAdUnitId: "ca-app-pub-2828628272233541/6652613807",
 
   // Production rewarded unit
-  rewardedAdUnitId: "ca-app-pub-3940256099942544/5224354917",
+  rewardedAdUnitId: "ca-app-pub-2828628272233541/2928991211",
 };
 
 // ─── Download Filename ───────────────────────
