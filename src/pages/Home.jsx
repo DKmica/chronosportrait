@@ -15,7 +15,6 @@ import SpecialModeBar from '@/components/transform/SpecialModeBar';
 import ScenarioSelector from '@/components/transform/ScenarioSelector';
 import GroupPhotoUploader from '@/components/transform/GroupPhotoUploader';
 import SpotlightSection from '@/components/community/SpotlightSection';
-import LoraSelector from '@/components/transform/LoraSelector';
 import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt, buildKidsPrompt, buildPetPrompt } from '@/lib/faceSwapPrompt';
 import { COUPLES_ERAS } from '@/lib/couplesEras';
 import { APP_NAME, APP_TAGLINE } from '@/lib/appConfig';
@@ -68,7 +67,6 @@ export default function Home() {
   const [customEraText, setCustomEraText] = useState('');
   const [selectedMode, setSelectedMode] = useState('solo');
   const [selectedStyle, setSelectedStyle] = useState('balanced');
-  const [selectedLoraId, setSelectedLoraId] = useState(null);
   const [isTransforming, setIsTransforming] = useState(false);
   const [transformStep, setTransformStep] = useState(0);
   const [error, setError] = useState(null);
@@ -278,20 +276,7 @@ export default function Home() {
         eraId = selectedEra?.id === 'custom' ? 'custom' : selectedEra?.id;
         eraLabel = selectedEra?.id === 'custom' ? (customEraText.slice(0, 30) || 'Custom Era') : selectedEra?.label;
 
-        // Inject LoRA face description for higher consistency
-        let loraExtraContext = '';
-        if (selectedLoraId) {
-          const { StyleLora } = base44.entities;
-          const loraList = await StyleLora.filter({ id: selectedLoraId });
-          const lora = loraList?.[0];
-          if (lora?.face_description) {
-            loraExtraContext = `\nPERSONAL IDENTITY LOCK (AI Model: ${lora.name}):\n${lora.face_description}\nPreserve ALL of the above features with the highest priority.`;
-            // increment usage count
-            StyleLora.update(lora.id, { transformations_using_lora: (lora.transformations_using_lora || 0) + 1 });
-          }
-        }
-
-        finalPrompt = buildFaceSwapPrompt(eraPrompt + loraExtraContext, eraLabel);
+        finalPrompt = buildFaceSwapPrompt(eraPrompt, eraLabel);
       }
 
       // Step 3: AI transform
@@ -414,9 +399,6 @@ export default function Home() {
             />
           </div>
         )}
-
-        {/* LoRA model selector (all modes) */}
-        <LoraSelector selectedLoraId={selectedLoraId} onSelect={setSelectedLoraId} />
 
         {/* Kids scenario selector */}
         {isKidsMode && (

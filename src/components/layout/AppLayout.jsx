@@ -6,7 +6,7 @@ import BottomNav from './BottomNav';
 import { useTabNavigation } from '@/lib/NavigationContext';
 import { APP_NAME } from '@/lib/appConfig';
 
-const TAB_ROOTS = ['/', '/find-timeline', '/my-collection', '/community', '/settings'];
+const TAB_ROOTS = ['/', '/find-timeline', '/community', '/settings'];
 
 function getTabIndex(path) {
   const root = TAB_ROOTS.find(t => t === path || (t !== '/' && path.startsWith(t)));
@@ -20,14 +20,11 @@ function isRootRoute(path) {
 // Map tab roots to display titles for child routes
 const ROUTE_TITLES = {
   '/result': null, // Result page uses era label — no static title needed
-  '/pricing': 'Upgrade',
   '/era-pack': 'Era Packs',
   '/legal': 'Legal',
   '/privacy': 'Privacy Policy',
   '/support': 'Help & Support',
   '/delete-account': 'Delete Account',
-  '/admin': 'Admin',
-  '/style-lora': 'My AI Model',
 };
 
 function getRouteTitle(path) {
