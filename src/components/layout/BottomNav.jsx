@@ -1,12 +1,13 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Sparkles, Users, Settings, Zap } from 'lucide-react';
+import { Sparkles, Users, Settings, Zap, Package } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useTabNavigation } from '@/lib/NavigationContext';
 
 const navItems = [
   { path: '/', icon: Sparkles, label: 'Transform' },
   { path: '/find-timeline', icon: Zap, label: 'My Era' },
+  { path: '/my-collection', icon: Package, label: 'Collection' },
   { path: '/community', icon: Users, label: 'Community' },
   { path: '/settings', icon: Settings, label: 'Settings' },
 ];

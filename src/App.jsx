@@ -34,12 +34,17 @@ function ThemeManager() {
 
 // Lazy load page components
 const Result = lazy(() => import('@/pages/Result.jsx'));
+const Gallery = lazy(() => import('@/pages/Gallery.jsx'));
 const Community = lazy(() => import('@/pages/Community'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const Onboarding = lazy(() => import('@/pages/Onboarding'));
 const FindTimeline = lazy(() => import('@/pages/FindTimeline'));
 const EraPack = lazy(() => import('@/pages/EraPack.jsx'));
 const Legal = lazy(() => import('@/pages/Legal'));
+const MyCollection = lazy(() => import('@/pages/MyCollection'));
+const Pricing = lazy(() => import('@/pages/Pricing.jsx'));
+const Admin = lazy(() => import('@/pages/Admin.jsx'));
+const StyleLora = lazy(() => import('@/pages/StyleLora.jsx'));
 const Support = lazy(() => import('@/pages/Support'));
 const DeleteAccount = lazy(() => import('@/pages/DeleteAccount'));
 const Privacy = lazy(() => import('@/pages/Privacy'));
@@ -81,12 +86,17 @@ const AuthenticatedApp = () => {
         <Route path="/onboarding" element={<Onboarding />} />
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/gallery" element={<Gallery />} />
           <Route path="/community" element={<Community />} />
+          <Route path="/my-collection" element={<MyCollection />} />
           <Route path="/result/:id" element={<Result />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/find-timeline" element={<FindTimeline />} />
           <Route path="/era-pack" element={<EraPack />} />
           <Route path="/legal" element={<Legal />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/admin" element={<Admin />} />
+          <Route path="/style-lora" element={<StyleLora />} />
           <Route path="/support" element={<Support />} />
           <Route path="/delete-account" element={<DeleteAccount />} />
           <Route path="/privacy" element={<Privacy />} />

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Sparkles, ChevronRight, RefreshCw } from 'lucide-react';
+import { Sparkles, Clock, ChevronRight, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ERAS } from '@/lib/eras';
-import { SPECIAL_MODES, KID_SCENARIOS, PET_SCENARIOS } from '@/lib/specialModes';
+import { AD_GATED_MODES, SPECIAL_MODES, KID_SCENARIOS, PET_SCENARIOS } from '@/lib/specialModes';
 import EraCard from '@/components/transform/EraCard';
 import CustomEraCard from '@/components/transform/CustomEraCard';
 import PhotoUploader from '@/components/transform/PhotoUploader';
@@ -14,7 +14,16 @@ import PartnersConfig from '@/components/transform/PartnersConfig.jsx';
 import SpecialModeBar from '@/components/transform/SpecialModeBar';
 import ScenarioSelector from '@/components/transform/ScenarioSelector';
 import GroupPhotoUploader from '@/components/transform/GroupPhotoUploader';
+import LimitBanner from '@/components/transform/LimitBanner';
 import SpotlightSection from '@/components/community/SpotlightSection';
+import DailyChallenge from '@/components/home/DailyChallenge';
+import CreditsDisplay from '@/components/monetization/CreditsDisplay';
+import StreakReminderBanner from '@/components/home/StreakReminderBanner';
+import AdGateModal from '@/components/transform/AdGateModal';
+import LoraSelector from '@/components/transform/LoraSelector';
+import BannerAd from '@/components/ads/BannerAd';
+import RewardedAdButton from '@/components/ads/RewardedAdButton';
+import { getOrCreateProfile, getRemainingToday, consumeTransformation, addBonusTransformation } from '@/lib/usageLimit';
 import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt, buildKidsPrompt, buildPetPrompt } from '@/lib/faceSwapPrompt';
 import { COUPLES_ERAS } from '@/lib/couplesEras';
 import { APP_NAME, APP_TAGLINE } from '@/lib/appConfig';
@@ -28,6 +37,7 @@ function looksLikeGeneratedImage(url) {
   return GENERATED_FILENAME_PATTERNS.some(p => filename.includes(p));
 }
 
+const FREE_DAILY_LIMIT = 3;
 
 export default function Home() {
   const navigate = useNavigate();
@@ -67,9 +77,11 @@ export default function Home() {
   const [customEraText, setCustomEraText] = useState('');
   const [selectedMode, setSelectedMode] = useState('solo');
   const [selectedStyle, setSelectedStyle] = useState('balanced');
+  const [selectedLoraId, setSelectedLoraId] = useState(null);
   const [isTransforming, setIsTransforming] = useState(false);
   const [transformStep, setTransformStep] = useState(0);
   const [error, setError] = useState(null);
+  const [adGateMode, setAdGateMode] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
 
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
@@ -95,11 +107,41 @@ export default function Home() {
     if (pullY >= PULL_THRESHOLD) {
       setRefreshing(true);
       await queryClient.invalidateQueries({ queryKey: ['community-posts'] });
+      if (user?.email) {
+        const updated = await getOrCreateProfile(user.email);
+        setUserProfile(updated);
+      }
       setRefreshing(false);
     }
     setPullY(0);
     touchStartY.current = null;
-  }, [pullY, queryClient]);
+  }, [pullY, queryClient, user?.email]);
+
+  // Countdown timer
+  const [timeUntilReset, setTimeUntilReset] = useState('');
+
+  useEffect(() => {
+    if (user?.email) {
+      getOrCreateProfile(user.email).then(setUserProfile);
+    }
+  }, [user?.email]);
+
+  // Daily countdown
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setHours(24, 0, 0, 0);
+      const diff = midnight - now;
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeUntilReset(`${h}h ${m}m ${s}s`);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   // Parse ?era= param on mount
   useEffect(() => {
@@ -111,6 +153,36 @@ export default function Home() {
     }
   }, []);
 
+  const remaining = userProfile ? getRemainingToday(userProfile) : FREE_DAILY_LIMIT;
+
+  const handleShareForBonus = async () => {
+    const shareText = 'Check out my historical portrait made with Chronos Booth! 🎨 Step into another era at ChronosBooth';
+    let shared = false;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Chronos Booth', text: shareText });
+        shared = true;
+      }
+    } catch (e) {
+      // Share dialog cancelled or failed — try clipboard fallback
+    }
+    if (!shared) {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        alert('Link copied! Share it to earn a bonus transformation.');
+        shared = true;
+      } catch (e) {
+        alert('Share this app with your friends to earn bonus transformations!');
+        shared = true;
+      }
+    }
+    // Award the bonus whenever the user attempted to share
+    if (shared && userProfile) {
+      await addBonusTransformation(userProfile, 1);
+      const updated = await getOrCreateProfile(user.email);
+      setUserProfile(updated);
+    }
+  };
   const isPartnersMode = selectedMode === 'partners';
   const isKidsMode = selectedMode === 'kids';
   const isPetMode = selectedMode === 'pet';
@@ -135,6 +207,10 @@ export default function Home() {
   };
 
   const handleModeSelect = (modeId) => {
+    if (AD_GATED_MODES.includes(modeId) && (!userProfile || userProfile.plan === 'free')) {
+      setAdGateMode(modeId);
+      return;
+    }
     setSelectedMode(modeId);
     setSelectedEra(null); // reset era when switching modes
   };
@@ -167,6 +243,7 @@ export default function Home() {
 
   const handleTransform = async () => {
     if (!canTransform()) return;
+    if (remaining <= 0) return;
 
     setIsTransforming(true);
     setTransformStep(0);
@@ -276,10 +353,23 @@ export default function Home() {
         eraId = selectedEra?.id === 'custom' ? 'custom' : selectedEra?.id;
         eraLabel = selectedEra?.id === 'custom' ? (customEraText.slice(0, 30) || 'Custom Era') : selectedEra?.label;
 
-        finalPrompt = buildFaceSwapPrompt(eraPrompt, eraLabel);
+        // Inject LoRA face description for higher consistency
+        let loraExtraContext = '';
+        if (selectedLoraId) {
+          const { StyleLora } = base44.entities;
+          const loraList = await StyleLora.filter({ id: selectedLoraId });
+          const lora = loraList?.[0];
+          if (lora?.face_description) {
+            loraExtraContext = `\nPERSONAL IDENTITY LOCK (AI Model: ${lora.name}):\n${lora.face_description}\nPreserve ALL of the above features with the highest priority.`;
+            // increment usage count
+            StyleLora.update(lora.id, { transformations_using_lora: (lora.transformations_using_lora || 0) + 1 });
+          }
+        }
+
+        finalPrompt = buildFaceSwapPrompt(eraPrompt + loraExtraContext, eraLabel);
       }
 
-      // Step 3: AI transform
+      // Step 3: Create DB record
       setTransformStep(3);
       const transformation = await base44.entities.Transformation.create({
         original_photo_url: uploadedUrl,
@@ -289,6 +379,7 @@ export default function Home() {
         status: 'processing',
       });
 
+      // Step 4: AI transform
       setTransformStep(4);
       const response = await base44.functions.invoke('transformPhoto', {
         prompt: finalPrompt,
@@ -302,11 +393,17 @@ export default function Home() {
         throw new Error(response.data.error || response.data.raw_error || 'Generation failed. Please try again.');
       }
 
+      // Step 5: Save result
       setTransformStep(5);
       await base44.entities.Transformation.update(transformation.id, {
         transformed_photo_url: response.data.url,
         status: 'completed',
       });
+
+      if (user?.email && userProfile) {
+        await consumeTransformation(userProfile);
+        getOrCreateProfile(user.email).then(setUserProfile);
+      }
 
       navigate(`/result/${transformation.id}`);
     } catch (err) {
@@ -342,6 +439,7 @@ export default function Home() {
             <p className="text-muted-foreground text-sm">{APP_TAGLINE}</p>
           </div>
           <div className="flex items-center gap-2">
+            <CreditsDisplay profile={userProfile} />
             <button onClick={() => navigate('/find-timeline')} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/15 border border-primary/30 text-primary text-xs font-semibold">
               <Sparkles className="w-3.5 h-3.5" />
               Find My Era
@@ -349,6 +447,25 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Limit banner */}
+      <div className="px-5 mb-3">
+        <LimitBanner remaining={remaining} timeUntilReset={timeUntilReset} profile={userProfile} onShareForBonus={handleShareForBonus} />
+      </div>
+
+      {/* Streak reminder */}
+      <StreakReminderBanner profile={userProfile} />
+
+      {/* Banner ad — free users only, below hero */}
+      <div className="px-5">
+        <BannerAd plan={userProfile?.plan} />
+      </div>
+
+      {/* Daily Challenge */}
+      <DailyChallenge
+        profile={userProfile}
+        onProfileUpdate={() => user?.email && getOrCreateProfile(user.email).then(setUserProfile)}
+      />
 
       {/* Community Spotlight */}
       <SpotlightSection />
@@ -399,6 +516,9 @@ export default function Home() {
             />
           </div>
         )}
+
+        {/* LoRA model selector (all modes) */}
+        <LoraSelector selectedLoraId={selectedLoraId} onSelect={setSelectedLoraId} />
 
         {/* Kids scenario selector */}
         {isKidsMode && (
@@ -466,6 +586,12 @@ export default function Home() {
           </div>
         )}
 
+        {/* Rewarded ad — free users earn bonus transformations */}
+        <RewardedAdButton
+          profile={userProfile}
+          onRewarded={() => user?.email && getOrCreateProfile(user.email).then(setUserProfile)}
+        />
+
         {/* Error */}
         {error && (
           <div className="rounded-xl bg-destructive/10 border border-destructive/30 px-4 py-3 text-sm text-destructive">
@@ -476,13 +602,18 @@ export default function Home() {
         {/* Transform button */}
         <Button
           onClick={handleTransform}
-          disabled={!canTransform() || isTransforming}
+          disabled={!canTransform() || isTransforming || remaining <= 0}
           className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-base gap-2 disabled:opacity-40"
         >
           {isTransforming ? (
             <>
               <div className="w-5 h-5 border-2 border-primary-foreground/40 border-t-primary-foreground rounded-full animate-spin" />
               {STEPS[transformStep] || 'Transforming…'}
+            </>
+          ) : remaining <= 0 ? (
+            <>
+              <Clock className="w-5 h-5" />
+              Resets in {timeUntilReset}
             </>
           ) : (
             <>
@@ -492,6 +623,14 @@ export default function Home() {
           )}
         </Button>
       </div>
+
+      {/* Ad gate modal */}
+      <AdGateModal
+        open={!!adGateMode}
+        onOpenChange={(v) => { if (!v) setAdGateMode(null); }}
+        modeName={SPECIAL_MODES.find(m => m.id === adGateMode)?.label || ''}
+        onUnlocked={() => { setSelectedMode(adGateMode); setAdGateMode(null); }}
+      />
     </div>
   );
 }
