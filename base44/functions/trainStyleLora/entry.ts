@@ -10,6 +10,59 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 const GEMINI_MODEL = 'gemini-2.0-flash';
 const GEMINI_TEXT_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const TRAINING_COST = 1;
+
+// ── Credit Helpers ──────────────────────────────────────────────────────────
+
+async function checkAndDeductTrainingCredits(base44, userEmail) {
+  const profiles = await base44.asServiceRole.entities.UserProfile.filter({ user_email: userEmail }, '-updated_date');
+  const profile = profiles?.[0];
+  if (!profile) return { ok: false, error: 'User profile not found', status: 404 };
+
+  const isPro = profile.plan === 'pro_monthly' || profile.plan === 'pro_yearly';
+  if (isPro) return { ok: true, profile, deducted: null };
+
+  const bonus = profile.bonus_transformations || 0;
+  const credits = profile.credits || 0;
+
+  const update = { total_transformations: (profile.total_transformations || 0) + 1 };
+  let deductionType = null;
+
+  if (bonus >= TRAINING_COST) {
+    update.bonus_transformations = bonus - TRAINING_COST;
+    deductionType = 'bonus';
+  } else if (credits >= TRAINING_COST) {
+    update.credits = credits - TRAINING_COST;
+    deductionType = 'credits';
+  } else {
+    return {
+      ok: false,
+      error: 'Insufficient credits to train an AI model. Upgrade to Pro or earn bonus transformations.',
+      error_code: 'INSUFFICIENT_CREDITS',
+      status: 402,
+    };
+  }
+
+  await base44.asServiceRole.entities.UserProfile.update(profile.id, update);
+  return { ok: true, profile, deducted: { type: deductionType } };
+}
+
+async function refundTrainingCredits(base44, userEmail, deducted) {
+  if (!deducted) return;
+  const profiles = await base44.asServiceRole.entities.UserProfile.filter({ user_email: userEmail }, '-updated_date');
+  const profile = profiles?.[0];
+  if (!profile) return;
+
+  const refund = { total_transformations: Math.max(0, (profile.total_transformations || 0) - 1) };
+  if (deducted.type === 'bonus') {
+    refund.bonus_transformations = (profile.bonus_transformations || 0) + TRAINING_COST;
+  } else if (deducted.type === 'credits') {
+    refund.credits = (profile.credits || 0) + TRAINING_COST;
+  }
+  await base44.asServiceRole.entities.UserProfile.update(profile.id, refund);
+}
+
+// ── Image Helpers ────────────────────────────────────────────────────────────
 
 async function imageUrlToBase64(url) {
   const res = await fetch(url);
@@ -51,6 +104,12 @@ async function analyzePhotosWithGemini(photoUrls) {
         responseModalities: ['TEXT'],
         temperature: 0.2,
       },
+      safetySettings: [
+        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
+        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
+        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
+      ],
     }),
   });
 
@@ -60,24 +119,35 @@ async function analyzePhotosWithGemini(photoUrls) {
   if (!res.ok) throw new Error(`Gemini API error ${res.status}: ${text.slice(0, 300)}`);
 
   const data = JSON.parse(text);
-  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  
+  const candidate = data?.candidates?.[0];
+
+  // Detect safety / content policy blocks
+  if (candidate?.finishReason === 'SAFETY' || candidate?.finishReason === 'PROHIBITED_CONTENT' || candidate?.finishReason === 'RECITATION') {
+    throw new Error('SAFETY_VIOLATION');
+  }
+
+  const rawText = candidate?.content?.parts?.[0]?.text || '';
+
   // Clean and parse JSON
   const jsonMatch = rawText.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('Could not parse JSON from Gemini response');
-  
+
   return JSON.parse(jsonMatch[0]);
 }
 
+// ── Main handler ──────────────────────────────────────────────────────────────
+
 Deno.serve(async (req) => {
   console.log('trainStyleLora invoked');
+
+  let body = {};
+  let loraId = null;
 
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    let body = {};
     try {
       const text = await req.text();
       if (text) body = JSON.parse(text);
@@ -86,6 +156,7 @@ Deno.serve(async (req) => {
     }
 
     const { lora_id, photo_urls } = body;
+    loraId = lora_id;
 
     if (!lora_id) return Response.json({ error: 'lora_id is required' }, { status: 400 });
     if (!photo_urls || photo_urls.length < 5) {
@@ -95,11 +166,38 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Maximum 10 photos allowed' }, { status: 400 });
     }
 
+    // ── Credit validation & atomic deduction (before any AI API call) ──
+    const creditCheck = await checkAndDeductTrainingCredits(base44, user.email);
+    if (!creditCheck.ok) {
+      // Mark as failed so the frontend can react
+      await base44.asServiceRole.entities.StyleLora.update(lora_id, { status: 'failed' });
+      return Response.json({
+        error: creditCheck.error,
+        error_code: creditCheck.error_code || 'INSUFFICIENT_CREDITS',
+      }, { status: creditCheck.status || 402 });
+    }
+
     // Mark as analyzing
     await base44.asServiceRole.entities.StyleLora.update(lora_id, { status: 'analyzing' });
 
     console.log(`[train] Analyzing ${photo_urls.length} photos for user ${user.email}...`);
-    const analysis = await analyzePhotosWithGemini(photo_urls);
+
+    let analysis;
+    try {
+      analysis = await analyzePhotosWithGemini(photo_urls);
+    } catch (analysisError) {
+      // Refund credits on failure
+      await refundTrainingCredits(base44, user.email, creditCheck.deducted);
+      await base44.asServiceRole.entities.StyleLora.update(lora_id, { status: 'failed' });
+
+      if (analysisError.message === 'SAFETY_VIOLATION' || analysisError.message.toLowerCase().includes('safety')) {
+        return Response.json({
+          error: 'One or more photos were blocked by safety filters. Please use appropriate photos.',
+          error_code: 'SAFETY_VIOLATION',
+        }, { status: 400 });
+      }
+      throw analysisError;
+    }
 
     console.log('[train] Analysis complete:', JSON.stringify(analysis).slice(0, 200));
 
@@ -119,15 +217,14 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('[error] trainStyleLora:', error.message);
-    
-    // Try to mark as failed
-    try {
-      const base44 = createClientFromRequest(req);
-      const body = await req.json().catch(() => ({}));
-      if (body.lora_id) {
-        await base44.asServiceRole.entities.StyleLora.update(body.lora_id, { status: 'failed' });
-      }
-    } catch (_) {}
+
+    // Mark as failed if we have the lora_id (saved before the try block)
+    if (loraId) {
+      try {
+        const base44 = createClientFromRequest(req);
+        await base44.asServiceRole.entities.StyleLora.update(loraId, { status: 'failed' });
+      } catch (_) {}
+    }
 
     return Response.json({ error: error.message }, { status: 500 });
   }
