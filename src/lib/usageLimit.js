@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 export const FREE_DAILY_LIMIT = 3;
 
 export async function getUserProfile(userEmail) {
-  const profiles = await base44.entities.UserProfile.filter({ user_email: userEmail });
+  const profiles = await base44.entities.UserProfile.filter({ user_email: userEmail }, '-updated_date');
   return profiles[0] || null;
 }
 
