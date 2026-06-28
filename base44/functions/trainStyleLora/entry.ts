@@ -121,14 +121,12 @@ async function analyzePhotosWithGemini(photoUrls) {
   const data = JSON.parse(text);
   const candidate = data?.candidates?.[0];
 
-  // Detect safety / content policy blocks
   if (candidate?.finishReason === 'SAFETY' || candidate?.finishReason === 'PROHIBITED_CONTENT' || candidate?.finishReason === 'RECITATION') {
     throw new Error('SAFETY_VIOLATION');
   }
 
   const rawText = candidate?.content?.parts?.[0]?.text || '';
 
-  // Clean and parse JSON
   const jsonMatch = rawText.match(/\{[\s\S]*\}/);
   if (!jsonMatch) throw new Error('Could not parse JSON from Gemini response');
 
@@ -166,10 +164,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Maximum 10 photos allowed' }, { status: 400 });
     }
 
-    // ── Credit validation & atomic deduction (before any AI API call) ──
     const creditCheck = await checkAndDeductTrainingCredits(base44, user.email);
     if (!creditCheck.ok) {
-      // Mark as failed so the frontend can react
       await base44.asServiceRole.entities.StyleLora.update(lora_id, { status: 'failed' });
       return Response.json({
         error: creditCheck.error,
@@ -177,7 +173,6 @@ Deno.serve(async (req) => {
       }, { status: creditCheck.status || 402 });
     }
 
-    // Mark as analyzing
     await base44.asServiceRole.entities.StyleLora.update(lora_id, { status: 'analyzing' });
 
     console.log(`[train] Analyzing ${photo_urls.length} photos for user ${user.email}...`);
@@ -186,7 +181,6 @@ Deno.serve(async (req) => {
     try {
       analysis = await analyzePhotosWithGemini(photo_urls);
     } catch (analysisError) {
-      // Refund credits on failure
       await refundTrainingCredits(base44, user.email, creditCheck.deducted);
       await base44.asServiceRole.entities.StyleLora.update(lora_id, { status: 'failed' });
 
@@ -201,7 +195,6 @@ Deno.serve(async (req) => {
 
     console.log('[train] Analysis complete:', JSON.stringify(analysis).slice(0, 200));
 
-    // Save the results
     await base44.asServiceRole.entities.StyleLora.update(lora_id, {
       status: 'ready',
       face_description: analysis.face_description,
@@ -218,7 +211,6 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('[error] trainStyleLora:', error.message);
 
-    // Mark as failed if we have the lora_id (saved before the try block)
     if (loraId) {
       try {
         const base44 = createClientFromRequest(req);

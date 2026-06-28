@@ -49,7 +49,6 @@ async function checkAndDeductCredits(base44, userEmail) {
     };
   }
 
-  // Streak tracking
   const yesterday = new Date();
   yesterday.setDate(yesterday.getDate() - 1);
   const yStr = yesterday.toISOString().split('T')[0];
@@ -125,7 +124,6 @@ async function callGemini(parts) {
   const data = JSON.parse(text);
   const candidate = data?.candidates?.[0];
 
-  // Detect safety / content policy blocks
   if (candidate?.finishReason === 'SAFETY' || candidate?.finishReason === 'PROHIBITED_CONTENT' || candidate?.finishReason === 'RECITATION') {
     throw new Error('SAFETY_VIOLATION');
   }
@@ -155,6 +153,14 @@ function isInvalidUrl(url) {
   return !url || url.startsWith('blob:') || url.startsWith('data:');
 }
 
+const GENERATED_FILENAME_PATTERNS = ['generated_image', 'ai-generated'];
+
+function looksLikeGeneratedImage(url) {
+  if (!url) return false;
+  const filename = url.split('/').pop().toLowerCase().split('?')[0];
+  return GENERATED_FILENAME_PATTERNS.some(p => filename.includes(p));
+}
+
 // ── Multi-person generation ─────────────────────────────────────────────────
 
 async function generateMultiPerson(base44, allPhotoUrls, prompt) {
@@ -178,16 +184,6 @@ async function generateMultiPerson(base44, allPhotoUrls, prompt) {
   const url = await uploadBase64AsUrl(base44, result.base64, result.mimeType);
   if (!url) throw new Error('Failed to upload generated image');
   return url;
-}
-
-// ── Generated image URL detector ──────────────────────────────────────────────
-
-const GENERATED_FILENAME_PATTERNS = ['generated_image', 'ai-generated'];
-
-function looksLikeGeneratedImage(url) {
-  if (!url) return false;
-  const filename = url.split('/').pop().toLowerCase().split('?')[0];
-  return GENERATED_FILENAME_PATTERNS.some(p => filename.includes(p));
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
@@ -226,11 +222,9 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Auth
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Validation
     if (!original_photo_url) {
       return Response.json({ error: 'original_photo_url is required' }, { status: 400 });
     }
@@ -243,7 +237,6 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Validate all URLs — reject blobs and generated images
     for (let i = 0; i < allUrls.length; i++) {
       if (isInvalidUrl(allUrls[i])) {
         return Response.json({
@@ -259,7 +252,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── Credit validation & atomic deduction (before any AI API call) ──
     const creditCheck = await checkAndDeductCredits(base44, user.email);
     if (!creditCheck.ok) {
       return Response.json({
@@ -274,10 +266,8 @@ Deno.serve(async (req) => {
     try {
       url = await generateMultiPerson(base44, allUrls, prompt);
     } catch (genError) {
-      // Refund credits on any generation failure
       await refundCredits(base44, user.email, creditCheck.deducted);
 
-      // Safety violation — specific error code for frontend
       if (genError.message === 'SAFETY_VIOLATION' || genError.message.toLowerCase().includes('safety')) {
         return Response.json({
           error: 'The image was blocked by safety filters. Please try a different photo or era.',
@@ -285,7 +275,7 @@ Deno.serve(async (req) => {
         }, { status: 400 });
       }
 
-      throw genError; // re-throw to outer catch for user-friendly message
+      throw genError;
     }
 
     console.log('[main] Transform complete:', url?.slice(0, 80));
