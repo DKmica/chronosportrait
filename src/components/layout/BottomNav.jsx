@@ -26,14 +26,14 @@ export default function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card/80 backdrop-blur-xl border-t border-border">
-      <div className="flex items-center justify-around py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      <div className="flex items-stretch py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))]">
         {navItems.map(({ path, icon: Icon, label }) => {
           const isActive = location.pathname === path;
           return (
             <button
               key={path}
               onClick={() => handleTabClick(path)}
-              className="flex flex-col items-center gap-1 px-4 py-1 relative transition-colors"
+              className="flex-1 flex flex-col items-center gap-1 px-1 py-1 relative transition-colors min-w-0"
             >
               {isActive && (
                 <motion.div
