@@ -4,8 +4,8 @@ import Stripe from 'npm:stripe@14.21.0';
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
 
 const PRICE_IDS = {
-  pro_monthly: 'price_1TWqKiE9ea3XI86gAYkxVZBZ',
-  pro_yearly: 'price_1Tn4uYE9ea3XI86gmYb3ElAv',
+  pro_monthly: 'price_1TWrqeE9ea3XI86gpmSrvcPg',
+  pro_yearly: 'price_1TWrqgE9ea3XI86gTz4cyad4',
 };
 
 Deno.serve(async (req) => {
