@@ -5,6 +5,9 @@ import { base44 } from '@/api/base44Client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Brain, Plus, Upload, X, CheckCircle, AlertCircle, Loader2, ChevronRight, Sparkles, Trash2, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import imageCompression from 'browser-image-compression';
+
+const COMPRESSION_OPTIONS = { maxSizeMB: 1, maxWidthOrHeight: 1024, useWebWorker: true };
 
 const MIN_PHOTOS = 5;
 const MAX_PHOTOS = 10;
@@ -47,15 +50,25 @@ export default function StyleLora() {
       data?.some?.(l => l.status === 'analyzing') ? 3000 : false,
   });
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const files = Array.from(e.target.files || []);
-    files.slice(0, MAX_PHOTOS - photos.length).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setPhotos(prev => [...prev, { file, preview: ev.target.result, url: null }]);
-      };
-      reader.readAsDataURL(file);
-    });
+    const toProcess = files.slice(0, MAX_PHOTOS - photos.length);
+    for (const file of toProcess) {
+      try {
+        const compressed = await imageCompression(file, COMPRESSION_OPTIONS);
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          setPhotos(prev => [...prev, { file: compressed, preview: ev.target.result, url: null }]);
+        };
+        reader.readAsDataURL(compressed);
+      } catch {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          setPhotos(prev => [...prev, { file, preview: ev.target.result, url: null }]);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
     e.target.value = '';
   };
 
@@ -91,6 +104,16 @@ export default function StyleLora() {
     base44.functions.invoke('trainStyleLora', {
       lora_id: lora.id,
       photo_urls: uploaded,
+    }).then(res => {
+      if (res.data?.error) {
+        if (res.data.error_code === 'INSUFFICIENT_CREDITS' || res.status === 402) {
+          base44.entities.StyleLora.delete(lora.id).catch(() => {});
+          queryClient.invalidateQueries({ queryKey: ['styleLoras'] });
+          setError('Insufficient credits to train an AI model. Upgrade to Pro or earn bonus transformations.');
+        } else if (res.data.error_code === 'SAFETY_VIOLATION') {
+          setError('One or more photos were flagged by safety filters. Please use appropriate photos.');
+        }
+      }
     }).catch(e => console.error('trainStyleLora error:', e));
 
     setTraining(false);
@@ -134,6 +157,14 @@ export default function StyleLora() {
           ))}
         </div>
       </div>
+
+      {/* Page-level error (e.g. insufficient credits from async training) */}
+      {error && !creating && (
+        <div className="mx-5 mb-3 rounded-xl bg-destructive/10 border border-destructive/30 px-4 py-3 text-sm text-destructive flex items-center justify-between gap-2">
+          <span>{error}</span>
+          <button onClick={() => setError(null)} className="text-destructive/70 hover:text-destructive text-xs font-semibold whitespace-nowrap">Dismiss</button>
+        </div>
+      )}
 
       {/* Model list */}
       <div className="px-5 space-y-3 mb-5">

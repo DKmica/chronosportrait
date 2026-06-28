@@ -1,6 +1,9 @@
 import React, { useRef, useState } from 'react';
 import { X, Plus, GripVertical, ArrowUp, ArrowDown, Users } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import imageCompression from 'browser-image-compression';
+
+const COMPRESSION_OPTIONS = { maxSizeMB: 1, maxWidthOrHeight: 1024, useWebWorker: true };
 
 // Layout preview description for each count
 const LAYOUT_LABELS = {
@@ -16,13 +19,21 @@ export default function GroupPhotoUploader({ photos, onAdd, onRemove, onReorder,
   const [dragIdx, setDragIdx] = useState(null);
   const [showLayout, setShowLayout] = useState(false);
 
-  const handleFiles = (e) => {
+  const handleFiles = async (e) => {
     const files = Array.from(e.target.files || []);
-    files.slice(0, maxPhotos - photos.length).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => onAdd(file, ev.target.result);
-      reader.readAsDataURL(file);
-    });
+    const toProcess = files.slice(0, maxPhotos - photos.length);
+    for (const file of toProcess) {
+      try {
+        const compressed = await imageCompression(file, COMPRESSION_OPTIONS);
+        const reader = new FileReader();
+        reader.onload = (ev) => onAdd(compressed, ev.target.result);
+        reader.readAsDataURL(compressed);
+      } catch {
+        const reader = new FileReader();
+        reader.onload = (ev) => onAdd(file, ev.target.result);
+        reader.readAsDataURL(file);
+      }
+    }
     e.target.value = '';
   };
 

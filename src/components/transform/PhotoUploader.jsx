@@ -1,16 +1,33 @@
-import React, { useId } from 'react';
-import { Camera, ImagePlus, X } from 'lucide-react';
+import React, { useId, useState } from 'react';
+import { Camera, ImagePlus, X, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import imageCompression from 'browser-image-compression';
+
+const COMPRESSION_OPTIONS = {
+  maxSizeMB: 1,
+  maxWidthOrHeight: 1024,
+  useWebWorker: true,
+};
 
 export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) {
   const uid = useId();
   const fileId = `photo-file-${uid}`;
   const cameraId = `photo-camera-${uid}`;
+  const [compressing, setCompressing] = useState(false);
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      onPhotoSelect(file);
+      setCompressing(true);
+      try {
+        const compressed = await imageCompression(file, COMPRESSION_OPTIONS);
+        onPhotoSelect(compressed);
+      } catch (err) {
+        console.error('Compression failed, using original:', err);
+        onPhotoSelect(file);
+      } finally {
+        setCompressing(false);
+      }
       e.target.value = '';
     }
   };
@@ -20,6 +37,13 @@ export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) 
       {/* Hidden inputs */}
       <input id={fileId} type="file" accept="image/*" onChange={handleFileChange} style={{ display: 'none' }} />
       <input id={cameraId} type="file" accept="image/*" capture="user" onChange={handleFileChange} style={{ display: 'none' }} />
+
+      {compressing && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Optimizing photo…
+        </div>
+      )}
 
       <AnimatePresence mode="wait">
         {photoPreview ? (
@@ -53,7 +77,7 @@ export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) 
       </AnimatePresence>
 
       {/* Action buttons */}
-      {!photoPreview && (
+      {!photoPreview && !compressing && (
         <div className="flex gap-3 w-full max-w-[280px]">
           <label
             htmlFor={cameraId}

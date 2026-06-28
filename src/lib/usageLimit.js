@@ -46,7 +46,8 @@ export function getRemainingToday(profile) {
   const usedToday = profile.last_transform_date === today ? (profile.transformations_today || 0) : 0;
   const base = FREE_DAILY_LIMIT - usedToday;
   const bonus = profile.bonus_transformations || 0;
-  return Math.max(0, base + bonus);
+  const credits = profile.credits || 0;
+  return Math.max(0, base + bonus + credits);
 }
 
 export async function consumeTransformation(profile) {

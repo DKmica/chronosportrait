@@ -1,14 +1,31 @@
-import React, { useRef } from "react";
-import { X, ImagePlus } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { X, ImagePlus, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import imageCompression from "browser-image-compression";
+
+const COMPRESSION_OPTIONS = {
+  maxSizeMB: 1,
+  maxWidthOrHeight: 1024,
+  useWebWorker: true,
+};
 
 export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) {
   const fileInputRef = useRef(null);
+  const [compressing, setCompressing] = useState(false);
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    onPhotoSelect(file);
+    setCompressing(true);
+    try {
+      const compressed = await imageCompression(file, COMPRESSION_OPTIONS);
+      onPhotoSelect(compressed);
+    } catch (err) {
+      console.error("Compression failed, using original:", err);
+      onPhotoSelect(file);
+    } finally {
+      setCompressing(false);
+    }
   };
 
   return (
@@ -21,6 +38,13 @@ export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) 
         className="hidden"
         onChange={handleFileChange}
       />
+
+      {compressing && (
+        <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Optimizing photo…
+        </div>
+      )}
 
       <AnimatePresence mode="wait">
         {!photoPreview ? (

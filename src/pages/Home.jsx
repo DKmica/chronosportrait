@@ -23,11 +23,12 @@ import AdGateModal from '@/components/transform/AdGateModal';
 import LoraSelector from '@/components/transform/LoraSelector';
 import BannerAd from '@/components/ads/BannerAd';
 import RewardedAdButton from '@/components/ads/RewardedAdButton';
-import { getOrCreateProfile, getRemainingToday, consumeTransformation, addBonusTransformation } from '@/lib/usageLimit';
+import { getOrCreateProfile, getRemainingToday, addBonusTransformation } from '@/lib/usageLimit';
 import { buildFaceSwapPrompt, buildPartnersPrompt, buildGroupPrompt, buildKidsPrompt, buildPetPrompt } from '@/lib/faceSwapPrompt';
 import { COUPLES_ERAS } from '@/lib/couplesEras';
 import { APP_NAME, APP_TAGLINE } from '@/lib/appConfig';
 import PhotoConsentBanner from '@/components/upload/PhotoConsentBanner';
+import UpgradeModal from '@/components/monetization/UpgradeModal';
 
 // Only flag clearly AI-generated filenames — avoid false positives on normal uploads
 const GENERATED_FILENAME_PATTERNS = ['generated_image', 'ai-generated'];
@@ -82,6 +83,7 @@ export default function Home() {
   const [transformStep, setTransformStep] = useState(0);
   const [error, setError] = useState(null);
   const [adGateMode, setAdGateMode] = useState(null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
 
   const { data: user } = useQuery({ queryKey: ['me'], queryFn: () => base44.auth.me() });
@@ -390,6 +392,23 @@ export default function Home() {
 
       if (response.data?.error) {
         await base44.entities.Transformation.update(transformation.id, { status: 'failed' });
+
+        // Insufficient credits → trigger upgrade modal
+        if (response.data.error_code === 'INSUFFICIENT_CREDITS' || response.status === 402) {
+          setShowUpgrade(true);
+          setIsTransforming(false);
+          setTransformStep(0);
+          return;
+        }
+
+        // Safety violation → specific warning
+        if (response.data.error_code === 'SAFETY_VIOLATION') {
+          setError(response.data.error);
+          setIsTransforming(false);
+          setTransformStep(0);
+          return;
+        }
+
         throw new Error(response.data.error || response.data.raw_error || 'Generation failed. Please try again.');
       }
 
@@ -400,8 +419,8 @@ export default function Home() {
         status: 'completed',
       });
 
-      if (user?.email && userProfile) {
-        await consumeTransformation(userProfile);
+      // Credits are now deducted server-side in transformPhoto; just refresh the profile
+      if (user?.email) {
         getOrCreateProfile(user.email).then(setUserProfile);
       }
 
@@ -623,6 +642,9 @@ export default function Home() {
           )}
         </Button>
       </div>
+
+      {/* Upgrade modal — triggered on insufficient credits */}
+      <UpgradeModal open={showUpgrade} onOpenChange={setShowUpgrade} featureHint="You've used all your free transformations." />
 
       {/* Ad gate modal */}
       <AdGateModal
