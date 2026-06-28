@@ -19,7 +19,8 @@ export default function PhotoUploader({ photoPreview, onPhotoSelect, onClear }) 
     setCompressing(true);
     try {
       const compressed = await imageCompression(file, COMPRESSION_OPTIONS);
-      onPhotoSelect(compressed);
+      const compressedFile = new File([compressed], file.name, { type: compressed.type || file.type });
+      onPhotoSelect(compressedFile);
     } catch (err) {
       console.error("Compression failed, using original:", err);
       onPhotoSelect(file);

@@ -56,11 +56,12 @@ export default function StyleLora() {
     for (const file of toProcess) {
       try {
         const compressed = await imageCompression(file, COMPRESSION_OPTIONS);
+        const compressedFile = new File([compressed], file.name, { type: compressed.type || file.type });
         const reader = new FileReader();
         reader.onload = (ev) => {
-          setPhotos(prev => [...prev, { file: compressed, preview: ev.target.result, url: null }]);
+          setPhotos(prev => [...prev, { file: compressedFile, preview: ev.target.result, url: null }]);
         };
-        reader.readAsDataURL(compressed);
+        reader.readAsDataURL(compressedFile);
       } catch {
         const reader = new FileReader();
         reader.onload = (ev) => {

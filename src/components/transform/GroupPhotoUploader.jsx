@@ -25,9 +25,10 @@ export default function GroupPhotoUploader({ photos, onAdd, onRemove, onReorder,
     for (const file of toProcess) {
       try {
         const compressed = await imageCompression(file, COMPRESSION_OPTIONS);
+        const compressedFile = new File([compressed], file.name, { type: compressed.type || file.type });
         const reader = new FileReader();
-        reader.onload = (ev) => onAdd(compressed, ev.target.result);
-        reader.readAsDataURL(compressed);
+        reader.onload = (ev) => onAdd(compressedFile, ev.target.result);
+        reader.readAsDataURL(compressedFile);
       } catch {
         const reader = new FileReader();
         reader.onload = (ev) => onAdd(file, ev.target.result);
