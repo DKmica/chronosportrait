@@ -1,0 +1,58 @@
+{
+  "name": "RewardToken",
+  "type": "object",
+  "properties": {
+    "user_email": {
+      "type": "string",
+      "description": "Email of the user who initiated the rewarded ad session"
+    },
+    "token": {
+      "type": "string",
+      "description": "Unique random token passed as custom_data to AdMob SSV"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "verified",
+        "consumed"
+      ],
+      "default": "pending",
+      "description": "pending = ad not yet verified; verified = AdMob SSV confirmed; consumed = bonus granted"
+    },
+    "transaction_id": {
+      "type": "string",
+      "description": "AdMob SSV transaction_id (set on verification, for replay prevention)"
+    },
+    "verified_at": {
+      "type": "string",
+      "description": "ISO timestamp when AdMob SSV verified this token"
+    }
+  },
+  "required": [
+    "user_email",
+    "token"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

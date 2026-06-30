@@ -63,8 +63,13 @@ export const showInterstitialAd = (plan) => {
 
 // Show a rewarded ad — calls onRewarded() only if the user watches the full ad
 // Returns: promise resolving to { rewarded: boolean }
-export const showRewardedAd = (plan) => {
+//
+// rewardToken: server-issued token from createRewardSession. In production mobile,
+// this is passed as serverSideVerificationOptions.customData so AdMob's SSV callback
+// can cryptographically verify the ad was watched before any bonus is granted.
+export const showRewardedAd = (plan, rewardToken) => {
   if (!showAds(plan)) return Promise.resolve({ rewarded: false });
+  if (!rewardToken) return Promise.resolve({ rewarded: false });
 
   // If AdMob SDK not loaded (web/dev), simulate a 3-second rewarded ad
   if (!window.googletag) {
@@ -74,7 +79,8 @@ export const showRewardedAd = (plan) => {
   return new Promise((resolve) => {
     try {
       window.googletag.cmd.push(() => {
-        // In production this would use the rewarded ad API
+        // In production this would use the rewarded ad API with:
+        //   serverSideVerificationOptions: { customData: rewardToken, userId: ... }
         // For test: simulate rewarded ad completion after 3 seconds
         const rewarded = true; // In real integration, this would come from the ad callback
         setTimeout(() => resolve({ rewarded }), 3000);

@@ -42,16 +42,45 @@ export default function RewardedAdButton({ profile, onRewarded }) {
     setLoading(true);
     setMessage(null);
     try {
-      const { rewarded: didWatch } = await showRewardedAd(profile.plan);
-      if (didWatch) {
-        // Grant reward server-side to prevent client-side privileged field modification.
-        await base44.functions.invoke('grantBonusTransformation', { amount: 1, source: 'rewarded_ad' });
+      // 1. Create a server-issued reward token (passed as customData to AdMob SSV).
+      const sessionRes = await base44.functions.invoke('createRewardSession');
+      const token = sessionRes.data?.token;
+      if (!token) throw new Error('Failed to create reward session');
+
+      // 2. Show the rewarded ad with the token configured for SSV.
+      const { rewarded: didWatch } = await showRewardedAd(profile.plan, token);
+      if (!didWatch) {
+        setMessage('Ad skipped — no reward granted.');
+        return;
+      }
+
+      // 3. Grant the bonus with the verified token. The SSV callback may take a
+      //    moment to arrive, so retry on PENDING_VERIFICATION.
+      let granted = false;
+      for (let attempt = 0; attempt < 5; attempt++) {
+        try {
+          await base44.functions.invoke('grantBonusTransformation', { reward_token: token });
+          granted = true;
+          break;
+        } catch (err) {
+          const errorCode = err?.response?.data?.error_code;
+          if (errorCode === 'PENDING_VERIFICATION') {
+            await new Promise((r) => setTimeout(r, 1500));
+            continue;
+          }
+          throw err;
+        }
+      }
+
+      if (granted) {
         setRewarded(true);
         setMessage('Bonus transformation unlocked!');
         if (onRewarded) onRewarded();
       } else {
-        setMessage('Ad skipped — no reward granted.');
+        setMessage('Ad verification timed out. Please try again.');
       }
+    } catch (error) {
+      setMessage('Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }
