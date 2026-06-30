@@ -72,7 +72,15 @@ export default function Community() {
     queryClient.setQueryData(['community-posts'], (old) =>
       (old || []).map(p => p.id === post.id ? { ...p, liked_by: newLikedBy, likes_count: newCount } : p)
     );
-    await base44.entities.CommunityPost.update(post.id, { liked_by: newLikedBy, likes_count: newCount });
+    try {
+      const res = await base44.functions.invoke('togglePostLike', { post_id: post.id });
+      const data = res.data || {};
+      queryClient.setQueryData(['community-posts'], (old) =>
+        (old || []).map(p => p.id === post.id ? { ...p, liked_by: data.liked_by, likes_count: data.likes_count } : p)
+      );
+    } catch {
+      queryClient.invalidateQueries({ queryKey: ['community-posts'] });
+    }
   };
 
   return (
