@@ -23,11 +23,9 @@ export default function DeleteAccount() {
     setDeleting(true);
     setError(null);
     try {
-      // Delete UserProfile record
-      const profiles = await base44.entities.UserProfile.filter({ user_email: user.email });
-      if (profiles[0]?.id) {
-        await base44.entities.UserProfile.delete(profiles[0].id);
-      }
+      // Use secure backend function to purge user data.
+      // UserProfile is preserved server-side to prevent limit-reset abuse.
+      await base44.functions.invoke('deleteAccount', {});
       setDone(true);
       // Give user a moment to see confirmation, then log out
       setTimeout(() => {
