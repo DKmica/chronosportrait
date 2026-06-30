@@ -44,13 +44,8 @@ export default function RewardedAdButton({ profile, onRewarded }) {
     try {
       const { rewarded: didWatch } = await showRewardedAd(profile.plan);
       if (didWatch) {
-        // Grant reward
-        const newWatched = watchedToday + 1;
-        await base44.entities.UserProfile.update(profile.id, {
-          bonus_transformations: (profile.bonus_transformations || 0) + 1,
-          rewarded_ads_watched_today: newWatched,
-          last_rewarded_ad_date: today,
-        });
+        // Grant reward server-side to prevent client-side privileged field modification.
+        await base44.functions.invoke('grantBonusTransformation', { amount: 1, source: 'rewarded_ad' });
         setRewarded(true);
         setMessage('Bonus transformation unlocked!');
         if (onRewarded) onRewarded();

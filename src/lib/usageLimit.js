@@ -91,7 +91,7 @@ export async function consumeTransformation(profile) {
 }
 
 export async function addBonusTransformation(profile, amount = 1) {
-  await base44.entities.UserProfile.update(profile.id, {
-    bonus_transformations: (profile.bonus_transformations || 0) + amount,
-  });
+  // Sensitive field (bonus_transformations) is updated server-side to prevent
+  // client-side privileged field modification.
+  await base44.functions.invoke('grantBonusTransformation', { amount, source: 'rewarded_ad' });
 }
