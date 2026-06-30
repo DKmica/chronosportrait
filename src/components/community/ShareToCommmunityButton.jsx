@@ -18,14 +18,10 @@ export default function ShareToCommunityButton({ transformation }) {
 
   const handlePost = async () => {
     setIsPosting(true);
-    await base44.entities.CommunityPost.create({
+    await base44.functions.invoke('createCommunityPost', {
       transformation_id: transformation.id,
-      image_url: transformation.transformed_photo_url,
-      era_label: transformation.era_label,
       caption: caption.trim(),
       author_name: authorName.trim() || 'Anonymous',
-      likes_count: 0,
-      liked_by: [],
     });
     setIsPosting(false);
     setPosted(true);

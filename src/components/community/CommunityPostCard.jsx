@@ -27,13 +27,14 @@ export default function CommunityPostCard({ post, currentUserEmail, onLikeToggle
   const handleSubmitComment = async () => {
     if (!commentText.trim()) return;
     setSubmitting(true);
-    const newComment = await base44.entities.PostComment.create({
+    const res = await base44.functions.invoke('createPostComment', {
       post_id: post.id,
       text: commentText.trim(),
-      author_name: currentUserEmail ? currentUserEmail.split('@')[0] : 'Anonymous',
-      author_email: currentUserEmail || '',
     });
-    setComments((prev) => [newComment, ...(prev || [])]);
+    const newComment = res.data?.comment;
+    if (newComment) {
+      setComments((prev) => [newComment, ...(prev || [])]);
+    }
     setCommentText('');
     setSubmitting(false);
   };
