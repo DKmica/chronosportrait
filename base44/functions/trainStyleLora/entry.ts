@@ -178,6 +178,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Maximum 10 photos allowed' }, { status: 400 });
     }
 
+    // Verify ownership before any service-role update to prevent IDOR.
+    const existing = await base44.asServiceRole.entities.StyleLora.filter({ id: lora_id });
+    const loraRecord = existing?.[0];
+    if (!loraRecord) {
+      return Response.json({ error: 'StyleLoRA not found' }, { status: 404 });
+    }
+    if (loraRecord.user_email !== user.email) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
     const creditCheck = await checkAndDeductTrainingCredits(base44, user.email);
     if (!creditCheck.ok) {
       await base44.asServiceRole.entities.StyleLora.update(lora_id, { status: 'failed' });
