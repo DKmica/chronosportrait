@@ -23,17 +23,18 @@ Deno.serve(async (req) => {
     }
     const priceId = PRICE_IDS[plan];
 
-    // Validate the Origin header against an allowlist to prevent open redirect.
-    // Only relative paths are accepted for redirect targets, then joined to the
-    // validated origin to form absolute Stripe redirect URLs.
-    const ALLOWED_ORIGINS = ['base44.app'];
+    // Validate the Origin header against this app's exact hostname to prevent
+    // open redirect. Only relative paths are accepted for redirect targets,
+    // then joined to the validated origin to form absolute Stripe redirect URLs.
+    const appId = Deno.env.get('BASE44_APP_ID');
+    const ALLOWED_HOSTS = appId ? [`${appId}.base44.app`] : [];
     const rawOrigin = req.headers.get('origin') || '';
     let safeOrigin = null;
     if (rawOrigin) {
       try {
         const parsed = new URL(rawOrigin);
         const host = parsed.hostname.toLowerCase();
-        if (ALLOWED_ORIGINS.some(h => host === h || host.endsWith('.' + h))) {
+        if (ALLOWED_HOSTS.includes(host)) {
           safeOrigin = parsed.origin;
         }
       } catch {}
