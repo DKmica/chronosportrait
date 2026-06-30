@@ -46,6 +46,12 @@ const ChartContainer = React.forwardRef(({ id, className, children, config, ...p
 })
 ChartContainer.displayName = "Chart"
 
+const sanitizeCssValue = (val) => {
+  if (typeof val !== 'string') return ''
+  // Strip characters that could break out of the CSS context or inject HTML
+  return val.replace(/[^a-zA-Z0-9#%,.\s()\-_]/g, '')
+}
+
 const ChartStyle = ({
   id,
   config
@@ -56,18 +62,19 @@ const ChartStyle = ({
     return null
   }
 
+  const safeId = sanitizeCssValue(id)
+
   return (
     (<style
       dangerouslySetInnerHTML={{
         __html: Object.entries(THEMES)
           .map(([theme, prefix]) => `
-${prefix} [data-chart=${id}] {
+${prefix} [data-chart=${safeId}] {
 ${colorConfig
 .map(([key, itemConfig]) => {
 const color =
-  itemConfig.theme?.[theme] ||
-  itemConfig.color
-return color ? `  --color-${key}: ${color};` : null
+  sanitizeCssValue(itemConfig.theme?.[theme] || itemConfig.color)
+return color ? `  --color-${sanitizeCssValue(key)}: ${color};` : null
 })
 .join("\n")}
 }

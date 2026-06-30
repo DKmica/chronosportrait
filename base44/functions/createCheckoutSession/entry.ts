@@ -17,8 +17,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { success_url, cancel_url, plan = 'pro_monthly' } = await req.json();
-    const priceId = PRICE_IDS[plan] || PRICE_IDS.pro_monthly;
+    const { success_url, cancel_url, plan } = await req.json();
+    if (!plan || !PRICE_IDS[plan]) {
+      return Response.json({ error: 'Invalid or unrecognized plan' }, { status: 400 });
+    }
+    const priceId = PRICE_IDS[plan];
 
     // Validate the Origin header against an allowlist to prevent open redirect.
     // Only relative paths are accepted for redirect targets, then joined to the

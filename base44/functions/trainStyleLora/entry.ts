@@ -168,7 +168,6 @@ Deno.serve(async (req) => {
     }
 
     const { lora_id, photo_urls } = body;
-    loraId = lora_id;
 
     if (!lora_id) return Response.json({ error: 'lora_id is required' }, { status: 400 });
     if (!photo_urls || photo_urls.length < 5) {
@@ -187,6 +186,10 @@ Deno.serve(async (req) => {
     if (loraRecord.user_email !== user.email) {
       return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
+
+    // Only assign loraId after ownership is verified, so the catch block
+    // can never modify a record the user does not own.
+    loraId = lora_id;
 
     const creditCheck = await checkAndDeductTrainingCredits(base44, user.email);
     if (!creditCheck.ok) {
