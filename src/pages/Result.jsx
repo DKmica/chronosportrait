@@ -76,13 +76,9 @@ export default function Result() {
     if (checked && t?.status === 'completed' && t?.transformed_photo_url && !sharedToSpotlight) {
       setIsSharing(true);
       const user = await base44.auth.me().catch(() => null);
-      await base44.entities.CommunityPost.create({
+      await base44.functions.invoke('createCommunityPost', {
         transformation_id: t.id,
-        image_url: t.transformed_photo_url,
-        era_label: t.era_label,
         author_name: user?.full_name || 'Anonymous',
-        likes_count: 0,
-        liked_by: [],
       });
       setIsSharing(false);
       setSharedToSpotlight(true);
