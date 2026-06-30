@@ -64,7 +64,28 @@ async function refundTrainingCredits(base44, userEmail, deducted) {
 
 // ── Image Helpers ────────────────────────────────────────────────────────────
 
+function assertSafeImageUrl(url) {
+  if (!url || typeof url !== 'string') throw new Error('Invalid image URL');
+  let parsed;
+  try { parsed = new URL(url); } catch { throw new Error('Invalid image URL'); }
+  if (parsed.protocol !== 'https:') throw new Error('Only HTTPS image URLs are allowed');
+  const host = parsed.hostname.toLowerCase();
+  if (host === '169.254.169.254' || host === 'metadata' || host === 'metadata.google.internal') {
+    throw new Error('Blocked internal image URL');
+  }
+  const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4) {
+    const [a, b] = [parseInt(ipv4[1]), parseInt(ipv4[2])];
+    if (a === 10 || a === 127 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || a === 0 || a >= 224) {
+      throw new Error('Blocked private image URL');
+    }
+  }
+  if (host === '[::1]' || host === 'localhost') throw new Error('Blocked local image URL');
+  return url;
+}
+
 async function imageUrlToBase64(url) {
+  assertSafeImageUrl(url);
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch image (${res.status}): ${url.slice(0, 80)}`);
   const buffer = await res.arrayBuffer();
