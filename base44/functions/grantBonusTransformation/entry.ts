@@ -9,10 +9,6 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    let body = {};
-    try { const text = await req.text(); if (text) body = JSON.parse(text); } catch (_) {}
-    const { amount = BONUS_PER_AD, source = 'rewarded_ad' } = body;
-
     const profiles = await base44.asServiceRole.entities.UserProfile.filter(
       { user_email: user.email }, '-updated_date'
     );
@@ -26,21 +22,16 @@ Deno.serve(async (req) => {
     const isNewDay = profile.last_rewarded_ad_date !== today;
     const watchedToday = isNewDay ? 0 : (profile.rewarded_ads_watched_today || 0);
 
-    if (source === 'rewarded_ad') {
-      if (watchedToday >= MAX_REWARDED_PER_DAY) {
-        return Response.json({ error: 'Daily rewarded ad limit reached' }, { status: 429 });
-      }
-      const update = {
-        bonus_transformations: (profile.bonus_transformations || 0) + amount,
-        rewarded_ads_watched_today: isNewDay ? 1 : watchedToday + 1,
-        last_rewarded_ad_date: today,
-      };
-      await base44.asServiceRole.entities.UserProfile.update(profile.id, update);
-      return Response.json({ success: true, bonus_transformations: update.bonus_transformations });
+    if (watchedToday >= MAX_REWARDED_PER_DAY) {
+      return Response.json({ error: 'Daily rewarded ad limit reached' }, { status: 429 });
     }
-
-    // Other sources (e.g. referral) — referral bonuses are handled by redeemReferral.
-    return Response.json({ error: 'Unsupported bonus source' }, { status: 400 });
+    const update = {
+      bonus_transformations: (profile.bonus_transformations || 0) + BONUS_PER_AD,
+      rewarded_ads_watched_today: isNewDay ? 1 : watchedToday + 1,
+      last_rewarded_ad_date: today,
+    };
+    await base44.asServiceRole.entities.UserProfile.update(profile.id, update);
+    return Response.json({ success: true, bonus_transformations: update.bonus_transformations });
   } catch (error) {
     console.error('[grantBonusTransformation] error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
