@@ -78,20 +78,10 @@ export default function Settings() {
   };
   
   const handleDeleteAccount = async () => {
-    setDeleting(true);
-    setDeleteError(null);
-    try {
-      // Delete user profile data
-      if (profile?.id) {
-        await base44.entities.UserProfile.delete(profile.id);
-      }
-      // Logout user
-      base44.auth.logout(window.location.href);
-    } catch (error) {
-      console.error('Delete account error:', error);
-      setDeleteError('Failed to delete account. Please try again.');
-      setDeleting(false);
-    }
+    // Redirect to the dedicated delete-account page, which uses the secure
+    // backend function to purge user data while preserving the UserProfile
+    // record (prevents usage limit / referral abuse).
+    navigate('/delete-account');
   };
 
   if (isAuthenticated === null) {
