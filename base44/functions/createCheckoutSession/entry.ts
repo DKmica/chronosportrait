@@ -20,14 +20,30 @@ Deno.serve(async (req) => {
     const { success_url, cancel_url, plan = 'pro_monthly' } = await req.json();
     const priceId = PRICE_IDS[plan] || PRICE_IDS.pro_monthly;
 
-    // Only allow relative paths for redirect URLs to prevent open redirect attacks
-    const origin = req.headers.get('origin') || '';
+    // Validate the Origin header against an allowlist to prevent open redirect.
+    // Only relative paths are accepted for redirect targets, then joined to the
+    // validated origin to form absolute Stripe redirect URLs.
+    const ALLOWED_ORIGINS = ['base44.app'];
+    const rawOrigin = req.headers.get('origin') || '';
+    let safeOrigin = null;
+    if (rawOrigin) {
+      try {
+        const parsed = new URL(rawOrigin);
+        const host = parsed.hostname.toLowerCase();
+        if (ALLOWED_ORIGINS.some(h => host === h || host.endsWith('.' + h))) {
+          safeOrigin = parsed.origin;
+        }
+      } catch {}
+    }
+    if (!safeOrigin) {
+      return Response.json({ error: 'Invalid request origin' }, { status: 403 });
+    }
     const safeSuccessUrl = (typeof success_url === 'string' && success_url.startsWith('/'))
-      ? `${origin}${success_url}`
-      : `${origin}/settings?upgraded=true`;
+      ? `${safeOrigin}${success_url}`
+      : `${safeOrigin}/settings?upgraded=true`;
     const safeCancelUrl = (typeof cancel_url === 'string' && cancel_url.startsWith('/'))
-      ? `${origin}${cancel_url}`
-      : `${origin}/settings`;
+      ? `${safeOrigin}${cancel_url}`
+      : `${safeOrigin}/settings`;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],

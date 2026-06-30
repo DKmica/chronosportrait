@@ -64,41 +64,21 @@ async function refundTrainingCredits(base44, userEmail, deducted) {
 
 // ── Image Helpers ────────────────────────────────────────────────────────────
 
-function isPrivateIp(ip) {
-  const v4 = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-  if (v4) {
-    const [a, b] = [parseInt(v4[1]), parseInt(v4[2])];
-    if (a === 10 || a === 127 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || a === 0 || a >= 224) {
-      return true;
-    }
-    if (a === 169 && b === 254) return true;
-    return false;
-  }
-  if (ip === '::1' || ip.startsWith('fc') || ip.startsWith('fd')) return true;
-  return false;
-}
+const ALLOWED_IMAGE_HOSTS = ['base44.app'];
 
-async function assertSafeImageUrl(url) {
+function assertSafeImageUrl(url) {
   if (!url || typeof url !== 'string') throw new Error('Invalid image URL');
   let parsed;
   try { parsed = new URL(url); } catch { throw new Error('Invalid image URL'); }
   if (parsed.protocol !== 'https:') throw new Error('Only HTTPS image URLs are allowed');
   const host = parsed.hostname.toLowerCase();
-  if (host === 'metadata' || host === 'metadata.google.internal') {
-    throw new Error('Blocked internal image URL');
-  }
-  const ips = await Deno.resolveDns(host, 'A').catch(() => []);
-  const ips6 = await Deno.resolveDns(host, 'AAAA').catch(() => []);
-  const allIps = [...ips, ...ips6];
-  if (allIps.length === 0) throw new Error('Could not resolve image URL host');
-  for (const ip of allIps) {
-    if (isPrivateIp(ip)) throw new Error('Blocked private image URL');
-  }
+  const isAllowed = ALLOWED_IMAGE_HOSTS.some(h => host === h || host.endsWith('.' + h));
+  if (!isAllowed) throw new Error('Image URL host is not allowed');
   return url;
 }
 
 async function imageUrlToBase64(url) {
-  await assertSafeImageUrl(url);
+  assertSafeImageUrl(url);
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Failed to fetch image (${res.status}): ${url.slice(0, 80)}`);
   const buffer = await res.arrayBuffer();
