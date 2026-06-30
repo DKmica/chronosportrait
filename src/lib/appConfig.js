@@ -47,25 +47,15 @@ export const APP_MIN_SDK = 23;
 export const APP_COMPILE_SDK = 35;
 
 // ─── AdMob Config ────────────────────────────
-// TODO (before Google Play release):
-//   1. Replace TEST app ID with your production AdMob App ID.
-//   2. Replace each TEST ad unit ID with your production ad unit IDs.
-//   3. Add the production AdMob App ID to AndroidManifest.xml:
-//      <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID"
-//                 android:value="ca-app-pub-XXXXXXXXXXXXXXXX~XXXXXXXXXX"/>
-//   Package: com.chronosbooth.app
+// AdMob IDs are loaded from Vite environment variables (VITE_ADMOB_*).
+// Set production values via .env.local or platform environment variables.
+// Falls back to Google's official test ad unit IDs (publicly documented):
+//   https://developers.google.com/admob/android/test-ads
 export const ADMOB_CONFIG = {
-  // Production App ID
-  appId: "ca-app-pub-2828628272233541~1612335266",
-
-  // Production banner unit
-  bannerAdUnitId: "ca-app-pub-2828628272233541/8788993419",
-
-  // Production interstitial unit
-  interstitialAdUnitId: "ca-app-pub-2828628272233541/6652613807",
-
-  // Production rewarded unit
-  rewardedAdUnitId: "ca-app-pub-2828628272233541/2928991211",
+  appId: import.meta.env.VITE_ADMOB_APP_ID || "ca-app-pub-3940256099942544~3347511713",
+  bannerAdUnitId: import.meta.env.VITE_ADMOB_BANNER_ID || "ca-app-pub-3940256099942544/6300978111",
+  interstitialAdUnitId: import.meta.env.VITE_ADMOB_INTERSTITIAL_ID || "ca-app-pub-3940256099942544/1033173712",
+  rewardedAdUnitId: import.meta.env.VITE_ADMOB_REWARDED_ID || "ca-app-pub-3940256099942544/5224354917",
 };
 
 // ─── Download Filename ───────────────────────
