@@ -90,8 +90,9 @@ export async function consumeTransformation(profile) {
   });
 }
 
-export async function addBonusTransformation(profile, amount = 1) {
+export async function addBonusTransformation(profile) {
   // Sensitive field (bonus_transformations) is updated server-side to prevent
-  // client-side privileged field modification.
-  await base44.functions.invoke('grantBonusTransformation', { amount, source: 'rewarded_ad' });
+  // client-side privileged field modification. The bonus amount is determined
+  // entirely by the server (BONUS_PER_AD constant) — no client-controlled values.
+  await base44.functions.invoke('grantBonusTransformation', { reward_token: profile?._reward_token });
 }

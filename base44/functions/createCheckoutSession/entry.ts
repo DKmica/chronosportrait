@@ -17,37 +17,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { success_url, cancel_url, plan } = await req.json();
+    const { plan } = await req.json();
     if (!plan || !PRICE_IDS[plan]) {
       return Response.json({ error: 'Invalid or unrecognized plan' }, { status: 400 });
     }
     const priceId = PRICE_IDS[plan];
 
-    // Validate the Origin header against this app's exact hostname to prevent
-    // open redirect. Only relative paths are accepted for redirect targets,
-    // then joined to the validated origin to form absolute Stripe redirect URLs.
+    // Construct redirect URLs from the server-side app ID only — never from
+    // client-supplied Origin headers or body parameters — to prevent open redirect.
     const appId = Deno.env.get('BASE44_APP_ID');
-    const ALLOWED_HOSTS = appId ? [`${appId}.base44.app`] : [];
-    const rawOrigin = req.headers.get('origin') || '';
-    let safeOrigin = null;
-    if (rawOrigin) {
-      try {
-        const parsed = new URL(rawOrigin);
-        const host = parsed.hostname.toLowerCase();
-        if (ALLOWED_HOSTS.includes(host)) {
-          safeOrigin = parsed.origin;
-        }
-      } catch {}
+    if (!appId) {
+      return Response.json({ error: 'Server misconfiguration: missing app ID' }, { status: 500 });
     }
-    if (!safeOrigin) {
-      return Response.json({ error: 'Invalid request origin' }, { status: 403 });
-    }
-    const safeSuccessUrl = (typeof success_url === 'string' && success_url.startsWith('/'))
-      ? `${safeOrigin}${success_url}`
-      : `${safeOrigin}/settings?upgraded=true`;
-    const safeCancelUrl = (typeof cancel_url === 'string' && cancel_url.startsWith('/'))
-      ? `${safeOrigin}${cancel_url}`
-      : `${safeOrigin}/settings`;
+    const safeOrigin = `https://${appId}.base44.app`;
+    const safeSuccessUrl = `${safeOrigin}/settings?upgraded=true`;
+    const safeCancelUrl = `${safeOrigin}/settings`;
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
