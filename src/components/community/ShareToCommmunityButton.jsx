@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Globe, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { base44 } from '@/api/base44Client';
@@ -15,17 +16,26 @@ export default function ShareToCommunityButton({ transformation }) {
   const [authorName, setAuthorName] = useState('');
   const [isPosting, setIsPosting] = useState(false);
   const [posted, setPosted] = useState(false);
+  const [error, setError] = useState(null);
+  const queryClient = useQueryClient();
 
   const handlePost = async () => {
     setIsPosting(true);
-    await base44.functions.invoke('createCommunityPost', {
-      transformation_id: transformation.id,
-      caption: caption.trim(),
-      author_name: authorName.trim() || 'Anonymous',
-    });
-    setIsPosting(false);
-    setPosted(true);
-    setTimeout(() => setOpen(false), 1200);
+    setError(null);
+    try {
+      await base44.functions.invoke('createCommunityPost', {
+        transformation_id: transformation.id,
+        caption: caption.trim(),
+        author_name: authorName.trim() || 'Anonymous',
+      });
+      setPosted(true);
+      queryClient.invalidateQueries({ queryKey: ['community-posts'] });
+      setTimeout(() => { setOpen(false); setPosted(false); setCaption(''); }, 1500);
+    } catch (err) {
+      setError(err?.response?.data?.error || 'Failed to post. Please try again.');
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   return (
@@ -82,6 +92,10 @@ export default function ShareToCommunityButton({ transformation }) {
                 {isPosting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
                 {isPosting ? 'Posting…' : 'Post to Gallery'}
               </Button>
+
+              {error && (
+                <p className="text-sm text-destructive text-center">{error}</p>
+              )}
             </div>
           )}
         </DialogContent>
