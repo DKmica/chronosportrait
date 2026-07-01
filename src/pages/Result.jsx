@@ -75,13 +75,18 @@ export default function Result() {
     setSpotlightOptIn(checked);
     if (checked && t?.status === 'completed' && t?.transformed_photo_url && !sharedToSpotlight) {
       setIsSharing(true);
-      const user = await base44.auth.me().catch(() => null);
-      await base44.functions.invoke('createCommunityPost', {
-        transformation_id: t.id,
-        author_name: user?.full_name || 'Anonymous',
-      });
-      setIsSharing(false);
-      setSharedToSpotlight(true);
+      try {
+        const user = await base44.auth.me().catch(() => null);
+        await base44.functions.invoke('createCommunityPost', {
+          transformation_id: t.id,
+          author_name: user?.full_name || 'Anonymous',
+        });
+        setSharedToSpotlight(true);
+      } catch (err) {
+        setSpotlightOptIn(false);
+      } finally {
+        setIsSharing(false);
+      }
     }
   };
 

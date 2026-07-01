@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 Deno.serve(async (req) => {
   try {
@@ -16,11 +16,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing transformation id' }, { status: 400 });
     }
 
-    const results = await base44.entities.Transformation.filter({ id });
+    // Use service role to fetch by ID (bypasses RLS), then verify ownership.
+    const results = await base44.asServiceRole.entities.Transformation.filter({ id });
     const transformation = results[0] || null;
 
     if (!transformation) {
       return Response.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    if (transformation.created_by_id !== user.id) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     return Response.json({ transformation });
