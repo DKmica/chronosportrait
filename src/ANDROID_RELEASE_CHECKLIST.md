@@ -2,7 +2,7 @@
 
 ## App Identity
 - **App Name:** ChronosBooth
-- **Package Name:** com.chronosbooth.app
+- **Package Name:** app.chronosbooth.com
 - **Version Name:** 1.0.0
 - **Version Code:** 1
 - **Min SDK:** 23 (Android 6.0 Marshmallow)
@@ -68,7 +68,7 @@
 
 ### Build (.aab)
 When building via Trusted Web Activity (TWA) or Capacitor/Expo:
-- [ ] `applicationId = "com.chronosbooth.app"`
+- [ ] `applicationId = "app.chronosbooth.com"`
 - [ ] `versionCode = 1`
 - [ ] `versionName = "1.0.0"`
 - [ ] `minSdkVersion = 23`
@@ -110,11 +110,11 @@ When building via Trusted Web Activity (TWA) or Capacitor/Expo:
 
 ```groovy
 android {
-    namespace "com.chronosbooth.app"
+    namespace "app.chronosbooth.com"
     compileSdk 35
 
     defaultConfig {
-        applicationId "com.chronosbooth.app"
+        applicationId "app.chronosbooth.com"
         minSdk 23
         targetSdk 35
         versionCode 1
@@ -137,4 +137,4 @@ dependencies {
 
 ---
 
-*Generated for ChronosBooth v1.0.0 — com.chronosbooth.app*
+*Generated for ChronosBooth v1.0.0 — app.chronosbooth.com*

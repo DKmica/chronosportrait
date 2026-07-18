@@ -7,7 +7,7 @@
   "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
-  "id": "com.chronosbooth.app",
+  "id": "app.chronosbooth.com",
   "scope": "/",
   "lang": "en",
   "categories": ["photo", "entertainment", "social"],
@@ -50,8 +50,8 @@
   "related_applications": [
     {
       "platform": "play",
-      "url": "https://play.google.com/store/apps/details?id=com.chronosbooth.app",
-      "id": "com.chronosbooth.app"
+      "url": "https://play.google.com/store/apps/details?id=app.chronosbooth.com",
+      "id": "app.chronosbooth.com"
     }
   ],
   "prefer_related_applications": false

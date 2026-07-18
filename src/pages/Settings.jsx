@@ -302,7 +302,7 @@ export default function Settings() {
               { icon: Shield, label: 'Privacy Policy', action: () => navigate('/privacy') },
               { icon: Shield, label: 'Terms of Service', action: () => navigate('/legal') },
               { icon: HelpCircle, label: 'Help & Support', action: () => navigate('/support') },
-              { icon: Star, label: 'Rate the App', action: () => window.open('https://play.google.com/store/apps/details?id=com.chronosbooth.app', '_blank') },
+              { icon: Star, label: 'Rate the App', action: () => window.open('https://play.google.com/store/apps/details?id=app.chronosbooth.com', '_blank') },
               { icon: UserX, label: 'Delete My Account', action: () => navigate('/delete-account') },
             ].map(({ icon: Icon, label, action }) => (
               <button

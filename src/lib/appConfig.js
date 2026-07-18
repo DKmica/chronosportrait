@@ -40,7 +40,7 @@ export function showWatermark(plan) {
 }
 
 // ─── App Build Info ──────────────────────────
-export const APP_PACKAGE = "com.chronosbooth.app";
+export const APP_PACKAGE = "app.chronosbooth.com";
 export const APP_VERSION_NAME = "1.0.0";
 export const APP_VERSION_CODE = 1;
 export const APP_MIN_SDK = 23;
