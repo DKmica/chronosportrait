@@ -277,7 +277,7 @@ export default function Home() {
         const uploaded = await Promise.all(
           groupPhotos.map(async (p) => {
             if (p.url) return p.url;
-            const { file_url } = await base44.integrations.Core.UploadFile({ file: p.file });
+            const { file_url } = await base44.integrations.Core.UploadPublicFile({ file: p.file });
             return file_url;
           })
         );
@@ -287,13 +287,13 @@ export default function Home() {
       } else if (isPartnersMode) {
         uploadedUrl = photoUrlA;
         if (!uploadedUrl) {
-          const { file_url } = await base44.integrations.Core.UploadFile({ file: photoA });
+          const { file_url } = await base44.integrations.Core.UploadPublicFile({ file: photoA });
           uploadedUrl = file_url;
           setPhotoUrlA(file_url);
         }
         let uploadedUrlB = photoUrlB;
         if (!uploadedUrlB) {
-          const { file_url: urlB } = await base44.integrations.Core.UploadFile({ file: photoB });
+          const { file_url: urlB } = await base44.integrations.Core.UploadPublicFile({ file: photoB });
           uploadedUrlB = urlB;
           setPhotoUrlB(urlB);
         }
@@ -301,7 +301,7 @@ export default function Home() {
       } else {
         uploadedUrl = photoUrl;
         if (!uploadedUrl) {
-          const { file_url } = await base44.integrations.Core.UploadFile({ file: photo });
+          const { file_url } = await base44.integrations.Core.UploadPublicFile({ file: photo });
           uploadedUrl = file_url;
           setPhotoUrl(file_url);
         }

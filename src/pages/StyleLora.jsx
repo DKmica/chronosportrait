@@ -85,7 +85,7 @@ export default function StyleLora() {
     const uploaded = await Promise.all(
       photos.map(async (p) => {
         if (p.url) return p.url;
-        const { file_url } = await base44.integrations.Core.UploadFile({ file: p.file });
+        const { file_url } = await base44.integrations.Core.UploadPublicFile({ file: p.file });
         return file_url;
       })
     );

@@ -162,7 +162,7 @@ async function uploadBase64AsUrl(base44, base64Data, mimeType) {
   const blob = new Blob([bytes], { type: mimeType });
   const ext = mimeType.includes('png') ? 'png' : 'jpg';
   const file = new File([blob], `output.${ext}`, { type: mimeType });
-  const result = await base44.asServiceRole.integrations.Core.UploadFile({ file });
+  const result = await base44.asServiceRole.integrations.Core.UploadPublicFile({ file });
   return result?.file_url;
 }
 
