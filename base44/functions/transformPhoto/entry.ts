@@ -1,12 +1,16 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
+import Jimp from 'npm:jimp@1.6.1';
 
 const FAL_API_KEY = Deno.env.get('FAL_API_KEY');
 const FAL_SYNC_BASE = 'https://fal.run';
+const FAL_QUEUE_BASE = 'https://queue.fal.run';
 
 // Solo mode (1 person): identity-preserving edit of the user's photo.
 const MODEL_SOLO = 'fal-ai/flux-pro/kontext/max';
-// Partners / group mode (>=2 people): text-to-image scene generation.
+// Partners / group scene generation: text-to-image.
 const MODEL_MULTI = 'fal-ai/flux-pro/v1.1';
+// Face swap (single face): base = scene, swap = the person's photo.
+const MODEL_FACESWAP = 'fal-ai/face-swap';
 
 const MAX_PEOPLE = 10;
 const FREE_DAILY_LIMIT = 3;
@@ -99,8 +103,6 @@ function assertSafeImageUrl(url) {
   try { parsed = new URL(url); } catch { throw new Error('Invalid image URL'); }
   if (parsed.protocol !== 'https:') throw new Error('Only HTTPS image URLs are allowed');
   const host = parsed.hostname.toLowerCase();
-  // Strict host allowlist — all uploaded files are hosted on base44.app.
-  // We pass these URLs to Fal.ai, so validating the host prevents SSRF.
   const isAllowed = ALLOWED_IMAGE_HOSTS.some(h => host === h || host.endsWith('.' + h));
   if (!isAllowed) throw new Error('Image URL host is not allowed');
   return url;
@@ -118,9 +120,25 @@ function looksLikeGeneratedImage(url) {
   return GENERATED_FILENAME_PATTERNS.some(p => filename.includes(p));
 }
 
-// ── Fal.ai generation ────────────────────────────────────────────────────────
+function bytesToBase64(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+  return btoa(s);
+}
 
-async function callFalSync(modelId, input) {
+async function fetchBuffer(url) {
+  const res = await fetch(url, { signal: AbortSignal.timeout(60000) });
+  if (!res.ok) throw new Error(`Failed to fetch ${url.slice(0, 80)} (${res.status})`);
+  return new Uint8Array(await res.arrayBuffer());
+}
+
+// ── Fal.ai call (sync, with queue fallback) ─────────────────────────────────
+
+function extractImageUrl(data) {
+  return data?.images?.[0]?.url || data?.image?.url || null;
+}
+
+async function callFal(modelId, input) {
   const url = `${FAL_SYNC_BASE}/${modelId}`;
   const res = await fetch(url, {
     method: 'POST',
@@ -133,58 +151,157 @@ async function callFalSync(modelId, input) {
   });
 
   const text = await res.text();
-  console.log(`[fal ${modelId}] status:`, res.status, '| preview:', text.slice(0, 400));
+  console.log(`[fal ${modelId}] status:`, res.status, '| preview:', text.slice(0, 300));
 
   if (!res.ok) throw new Error(`Fal API error ${res.status}: ${text.slice(0, 400)}`);
 
   const data = JSON.parse(text);
-  const imageUrl = data?.images?.[0]?.url || data?.image?.url;
-  if (!imageUrl) throw new Error(`No image in Fal response: ${text.slice(0, 300)}`);
-  return imageUrl;
+
+  // Sync endpoint returned the result directly.
+  const direct = extractImageUrl(data);
+  if (direct) return direct;
+
+  // Otherwise this is a queue response — poll until complete.
+  const requestId = data?.request_id;
+  if (!requestId) throw new Error(`No image or request_id in Fal response: ${text.slice(0, 300)}`);
+
+  console.log(`[fal ${modelId}] queued, polling ${requestId}...`);
+  const statusUrl = `${FAL_QUEUE_BASE}/${modelId}/requests/${requestId}/status`;
+  for (let attempt = 0; attempt < 90; attempt++) {
+    await new Promise(r => setTimeout(r, 2000));
+    const sres = await fetch(statusUrl, {
+      headers: { 'Authorization': `Key ${FAL_API_KEY}` },
+      signal: AbortSignal.timeout(15000),
+    });
+    if (!sres.ok) continue;
+    const sdata = await sres.json();
+    if (sdata.status === 'COMPLETED') {
+      const resultRes = await fetch(`${FAL_QUEUE_BASE}/${modelId}/requests/${requestId}`, {
+        headers: { 'Authorization': `Key ${FAL_API_KEY}` },
+        signal: AbortSignal.timeout(30000),
+      });
+      const resultJson = await resultRes.json();
+      const img = extractImageUrl(resultJson);
+      if (!img) throw new Error(`Fal completed but no image: ${JSON.stringify(resultJson).slice(0, 300)}`);
+      return img;
+    }
+    if (sdata.status === 'FAILED' || sdata.status === 'CANCELLED') {
+      throw new Error(`Fal request ${sdata.status}`);
+    }
+  }
+  throw new Error(`Fal request timed out (polling ${requestId})`);
 }
 
-async function downloadAndUploadFalImage(base44, falImageUrl) {
-  const res = await fetch(falImageUrl, { signal: AbortSignal.timeout(60000) });
-  if (!res.ok) throw new Error(`Failed to download generated image (${res.status})`);
-  const blob = await res.blob();
-  const contentType = blob.type || 'image/jpeg';
-  const ext = contentType.includes('png') ? 'png' : 'jpg';
-  const file = new File([blob], `output.${ext}`, { type: contentType });
+async function downloadAndUpload(base44, falImageUrl) {
+  const bytes = await fetchBuffer(falImageUrl);
+  // Infer type from URL extension, default jpeg.
+  const isPng = falImageUrl.toLowerCase().includes('.png');
+  const contentType = isPng ? 'image/png' : 'image/jpeg';
+  const ext = isPng ? 'png' : 'jpg';
+  const file = new File([bytes], `output.${ext}`, { type: contentType });
   const result = await base44.asServiceRole.integrations.Core.UploadPublicFile({ file });
   return result?.file_url;
 }
 
-async function generateImage(base44, allPhotoUrls, prompt) {
-  const personCount = allPhotoUrls.length;
-  let falImageUrl;
+// ── Solo: identity-preserving edit ───────────────────────────────────────────
 
-  if (personCount === 1) {
-    // Solo: FLUX.1 Kontext edits the user's photo while preserving their identity.
-    assertSafeImageUrl(allPhotoUrls[0]);
-    const editPrompt = `Keep the person's face, identity, and features exactly the same. Transform this photo so: ${prompt}`;
-    console.log('[generate] Kontext edit for 1 person...');
-    falImageUrl = await callFalSync(MODEL_SOLO, {
-      prompt: editPrompt,
-      image_url: allPhotoUrls[0],
-      num_images: 1,
-      output_format: 'jpeg',
-      safety_tolerance: '2',
-    });
-  } else {
-    // Partners / group: text-to-image generates the multi-person scene.
-    console.log(`[generate] Flux text-to-image for ${personCount} people...`);
-    falImageUrl = await callFalSync(MODEL_MULTI, {
-      prompt,
-      num_images: 1,
-      output_format: 'jpeg',
-      safety_tolerance: '2',
-      image_size: 'landscape_4_3',
-    });
+async function generateSolo(base44, photoUrl, prompt) {
+  assertSafeImageUrl(photoUrl);
+  const editPrompt = `Keep the person's face, identity, and features exactly the same. Transform this photo so: ${prompt}`;
+  console.log('[generate] Kontext edit for 1 person...');
+  const falImageUrl = await callFal(MODEL_SOLO, {
+    prompt: editPrompt,
+    image_url: photoUrl,
+    num_images: 1,
+    output_format: 'jpeg',
+    safety_tolerance: '2',
+  });
+  const url = await downloadAndUpload(base44, falImageUrl);
+  if (!url) throw new Error('Failed to upload generated image');
+  return url;
+}
+
+// ── Partners / Group: scene + per-person face swap ──────────────────────────
+
+async function swapFaceOntoStrip(stripDataUri, personPhotoUrl) {
+  return callFal(MODEL_FACESWAP, {
+    base_image_url: stripDataUri,
+    swap_image_url: personPhotoUrl,
+    enable_safety_checker: true,
+  });
+}
+
+async function generateMultiPersonWithFaceSwap(base44, allPhotoUrls, prompt) {
+  const n = allPhotoUrls.length;
+  for (const u of allPhotoUrls) assertSafeImageUrl(u);
+
+  // 1) Generate the era scene with people arranged in a horizontal row.
+  const layoutPrompt = `A wide group photo with exactly ${n} people standing in a horizontal row, evenly spaced, ` +
+    `each person centered within their own vertical section, facing forward, upper body visible, clear gap between each person. ${prompt}`;
+  console.log(`[generate] Scene for ${n} people...`);
+  const sceneFalUrl = await callFal(MODEL_MULTI, {
+    prompt: layoutPrompt,
+    num_images: 1,
+    output_format: 'jpeg',
+    safety_tolerance: '2',
+    image_size: 'landscape_4_3',
+  });
+
+  // 2) Load scene and split into vertical strips (one per person).
+  console.log('[generate] Splitting scene into strips...');
+  const sceneBytes = await fetchBuffer(sceneFalUrl);
+  const scene = await Jimp.read(Buffer.from(sceneBytes));
+  const W = scene.bitmap.width;
+  const H = scene.bitmap.height;
+  const stripW = Math.floor(W / n);
+
+  const strips = [];
+  for (let i = 0; i < n; i++) {
+    const x = i * stripW;
+    const w = (i === n - 1) ? (W - x) : stripW; // last strip takes the remainder
+    const strip = scene.clone().crop(x, 0, w, H);
+    const buf = await strip.getBuffer("image/jpeg");
+    strips.push({ x, w, dataUri: `data:image/jpeg;base64,${bytesToBase64(new Uint8Array(buf))}` });
   }
 
-  console.log('[generate] Downloading and re-uploading generated image...');
-  const url = await downloadAndUploadFalImage(base44, falImageUrl);
-  if (!url) throw new Error('Failed to upload generated image');
+  // 3) Face-swap each person's photo onto their strip (parallel, capped at 6).
+  console.log(`[generate] Face-swapping ${n} strips...`);
+  const swapResults = [];
+  for (let i = 0; i < n; i += 6) {
+    const batch = strips.slice(i, i + 6);
+    const settled = await Promise.allSettled(
+      batch.map(s => swapFaceOntoStrip(s.dataUri, allPhotoUrls[i + batch.indexOf(s)]))
+    );
+    settled.forEach(r => swapResults.push(r));
+  }
+
+  // 4) Composite the swapped strips back into one image.
+  console.log('[generate] Compositing final image...');
+  const canvas = new Jimp(W, H);
+  let anySwapped = false;
+  for (let i = 0; i < n; i++) {
+    const res = swapResults[i];
+    const strip = strips[i];
+    let stripBytes;
+    if (res.status === 'fulfilled' && res.value) {
+      anySwapped = true;
+      stripBytes = await fetchBuffer(res.value);
+    } else {
+      // Swap failed for this person — keep the original strip (no face swap).
+      console.warn(`[generate] Strip ${i + 1} swap failed, keeping original:`, res.reason?.message);
+      stripBytes = await (scene.clone().crop(strip.x, 0, strip.w, H)).getBuffer("image/jpeg");
+    }
+    const stripImg = await Jimp.read(Buffer.from(stripBytes));
+    canvas.composite(stripImg, strip.x, 0);
+  }
+
+  if (!anySwapped) console.warn('[generate] No strips were face-swapped; returning scene as-is.');
+
+  const finalBytes = await canvas.getBuffer("image/jpeg");
+  const file = new File([new Uint8Array(finalBytes)], 'output.jpg', { type: 'image/jpeg' });
+  const result = await base44.asServiceRole.integrations.Core.UploadPublicFile({ file });
+  const url = result?.file_url;
+  if (!url) throw new Error('Failed to upload final image');
   return url;
 }
 
@@ -266,7 +383,9 @@ export default async function(req) {
 
     let url;
     try {
-      url = await generateImage(base44, allUrls, prompt);
+      url = personCount === 1
+        ? await generateSolo(base44, allUrls[0], prompt)
+        : await generateMultiPersonWithFaceSwap(base44, allUrls, prompt);
     } catch (genError) {
       await refundCredits(base44, user.email, creditCheck.deducted);
 
