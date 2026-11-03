@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
-import { Jimp } from 'npm:jimp@1.6.1/dist/esm/index.js';
+import Jimp from 'npm:jimp@0.22.12/dist/index.js';
 
 const FAL_API_KEY = Deno.env.get('FAL_API_KEY');
 const FAL_SYNC_BASE = 'https://fal.run';
@@ -260,7 +260,7 @@ async function generateMultiPersonWithFaceSwap(base44, allPhotoUrls, prompt) {
     const x = i * stripW;
     const w = (i === n - 1) ? (W - x) : stripW; // last strip takes the remainder
     const strip = scene.clone().crop(x, 0, w, H);
-    const buf = await strip.getBuffer("image/jpeg");
+    const buf = await strip.getBufferAsync(Jimp.MIME_JPEG);
     strips.push({ x, w, dataUri: `data:image/jpeg;base64,${bytesToBase64(new Uint8Array(buf))}` });
   }
 
@@ -289,7 +289,7 @@ async function generateMultiPersonWithFaceSwap(base44, allPhotoUrls, prompt) {
     } else {
       // Swap failed for this person — keep the original strip (no face swap).
       console.warn(`[generate] Strip ${i + 1} swap failed, keeping original:`, res.reason?.message);
-      stripBytes = await (scene.clone().crop(strip.x, 0, strip.w, H)).getBuffer("image/jpeg");
+      stripBytes = await (scene.clone().crop(strip.x, 0, strip.w, H)).getBufferAsync(Jimp.MIME_JPEG);
     }
     const stripImg = await Jimp.read(Buffer.from(stripBytes));
     canvas.composite(stripImg, strip.x, 0);
@@ -297,7 +297,7 @@ async function generateMultiPersonWithFaceSwap(base44, allPhotoUrls, prompt) {
 
   if (!anySwapped) console.warn('[generate] No strips were face-swapped; returning scene as-is.');
 
-  const finalBytes = await canvas.getBuffer("image/jpeg");
+  const finalBytes = await canvas.getBufferAsync(Jimp.MIME_JPEG);
   const file = new File([new Uint8Array(finalBytes)], 'output.jpg', { type: 'image/jpeg' });
   const result = await base44.asServiceRole.integrations.Core.UploadPublicFile({ file });
   const url = result?.file_url;
