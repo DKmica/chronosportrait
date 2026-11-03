@@ -1,8 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
 
-const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-const GEMINI_MODEL = 'gemini-2.5-flash-image';
-const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const FAL_API_KEY = Deno.env.get('FAL_API_KEY');
+const FAL_SYNC_BASE = 'https://fal.run';
+
+// Solo mode (1 person): identity-preserving edit of the user's photo.
+const MODEL_SOLO = 'fal-ai/flux-pro/kontext/max';
+// Partners / group mode (>=2 people): text-to-image scene generation.
+const MODEL_MULTI = 'fal-ai/flux-pro/v1.1';
 
 const MAX_PEOPLE = 10;
 const FREE_DAILY_LIMIT = 3;
@@ -96,74 +100,10 @@ function assertSafeImageUrl(url) {
   if (parsed.protocol !== 'https:') throw new Error('Only HTTPS image URLs are allowed');
   const host = parsed.hostname.toLowerCase();
   // Strict host allowlist — all uploaded files are hosted on base44.app.
-  // This prevents SSRF and DNS-rebinding/TOCTOU since no separate resolution
-  // step precedes the fetch.
+  // We pass these URLs to Fal.ai, so validating the host prevents SSRF.
   const isAllowed = ALLOWED_IMAGE_HOSTS.some(h => host === h || host.endsWith('.' + h));
   if (!isAllowed) throw new Error('Image URL host is not allowed');
   return url;
-}
-
-async function imageUrlToBase64(url) {
-  assertSafeImageUrl(url);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Failed to fetch image (${res.status}): ${url.slice(0, 80)}`);
-  const buffer = await res.arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-  return {
-    base64: btoa(binary),
-    mimeType: res.headers.get('content-type')?.split(';')[0] || 'image/jpeg',
-  };
-}
-
-async function callGemini(parts) {
-  const res = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ role: 'user', parts }],
-      generationConfig: { responseModalities: ['TEXT', 'IMAGE'] },
-      safetySettings: [
-        { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' },
-        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
-        { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
-      ],
-    }),
-  });
-
-  const text = await res.text();
-  console.log('[gemini] status:', res.status, '| response (first 400):', text.slice(0, 400));
-
-  if (!res.ok) throw new Error(`Gemini API error ${res.status}: ${text.slice(0, 400)}`);
-
-  const data = JSON.parse(text);
-  const candidate = data?.candidates?.[0];
-
-  if (candidate?.finishReason === 'SAFETY' || candidate?.finishReason === 'PROHIBITED_CONTENT' || candidate?.finishReason === 'RECITATION') {
-    throw new Error('SAFETY_VIOLATION');
-  }
-
-  for (const c of (data?.candidates || [])) {
-    for (const part of (c?.content?.parts || [])) {
-      if (part.inlineData?.data) {
-        return { base64: part.inlineData.data, mimeType: part.inlineData.mimeType || 'image/jpeg' };
-      }
-    }
-  }
-  throw new Error(`No image in Gemini response: ${text.slice(0, 300)}`);
-}
-
-async function uploadBase64AsUrl(base44, base64Data, mimeType) {
-  const binaryStr = atob(base64Data);
-  const bytes = new Uint8Array(binaryStr.length);
-  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
-  const blob = new Blob([bytes], { type: mimeType });
-  const ext = mimeType.includes('png') ? 'png' : 'jpg';
-  const file = new File([blob], `output.${ext}`, { type: mimeType });
-  const result = await base44.asServiceRole.integrations.Core.UploadPublicFile({ file });
-  return result?.file_url;
 }
 
 function isInvalidUrl(url) {
@@ -178,39 +118,84 @@ function looksLikeGeneratedImage(url) {
   return GENERATED_FILENAME_PATTERNS.some(p => filename.includes(p));
 }
 
-// ── Multi-person generation ─────────────────────────────────────────────────
+// ── Fal.ai generation ────────────────────────────────────────────────────────
 
-async function generateMultiPerson(base44, allPhotoUrls, prompt) {
+async function callFalSync(modelId, input) {
+  const url = `${FAL_SYNC_BASE}/${modelId}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Key ${FAL_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+    signal: AbortSignal.timeout(120000),
+  });
+
+  const text = await res.text();
+  console.log(`[fal ${modelId}] status:`, res.status, '| preview:', text.slice(0, 400));
+
+  if (!res.ok) throw new Error(`Fal API error ${res.status}: ${text.slice(0, 400)}`);
+
+  const data = JSON.parse(text);
+  const imageUrl = data?.images?.[0]?.url || data?.image?.url;
+  if (!imageUrl) throw new Error(`No image in Fal response: ${text.slice(0, 300)}`);
+  return imageUrl;
+}
+
+async function downloadAndUploadFalImage(base44, falImageUrl) {
+  const res = await fetch(falImageUrl, { signal: AbortSignal.timeout(60000) });
+  if (!res.ok) throw new Error(`Failed to download generated image (${res.status})`);
+  const blob = await res.blob();
+  const contentType = blob.type || 'image/jpeg';
+  const ext = contentType.includes('png') ? 'png' : 'jpg';
+  const file = new File([blob], `output.${ext}`, { type: contentType });
+  const result = await base44.asServiceRole.integrations.Core.UploadPublicFile({ file });
+  return result?.file_url;
+}
+
+async function generateImage(base44, allPhotoUrls, prompt) {
   const personCount = allPhotoUrls.length;
-  console.log(`[generate] Fetching ${personCount} reference image(s)...`);
+  let falImageUrl;
 
-  const images = await Promise.all(allPhotoUrls.map(url => imageUrlToBase64(url)));
-
-  const parts = [];
-  parts.push({ text: `I am uploading exactly ${personCount} reference photo${personCount === 1 ? '' : 's'} below, one per person. Each person must appear exactly once in the output.\n` });
-
-  for (let i = 0; i < images.length; i++) {
-    parts.push({ text: `--- PERSON ${i + 1} OF ${personCount} ---\nIMPORTANT: Copy this person's exact face into the output. Preserve their face shape, eyes, nose, mouth, skin tone, age, and all unique features. This is Person ${i + 1} — do not change, merge, or replace their face.` });
-    parts.push({ inlineData: { mimeType: images[i].mimeType, data: images[i].base64 } });
+  if (personCount === 1) {
+    // Solo: FLUX.1 Kontext edits the user's photo while preserving their identity.
+    assertSafeImageUrl(allPhotoUrls[0]);
+    const editPrompt = `Keep the person's face, identity, and features exactly the same. Transform this photo so: ${prompt}`;
+    console.log('[generate] Kontext edit for 1 person...');
+    falImageUrl = await callFalSync(MODEL_SOLO, {
+      prompt: editPrompt,
+      image_url: allPhotoUrls[0],
+      num_images: 1,
+      output_format: 'jpeg',
+      safety_tolerance: '2',
+    });
+  } else {
+    // Partners / group: text-to-image generates the multi-person scene.
+    console.log(`[generate] Flux text-to-image for ${personCount} people...`);
+    falImageUrl = await callFalSync(MODEL_MULTI, {
+      prompt,
+      num_images: 1,
+      output_format: 'jpeg',
+      safety_tolerance: '2',
+      image_size: 'landscape_4_3',
+    });
   }
 
-  parts.push({ text: `--- END OF REFERENCE IMAGES (${personCount} total) ---\n\n${prompt}` });
-
-  console.log(`[generate] Calling Gemini with ${personCount} person(s)...`);
-  const result = await callGemini(parts);
-  const url = await uploadBase64AsUrl(base44, result.base64, result.mimeType);
+  console.log('[generate] Downloading and re-uploading generated image...');
+  const url = await downloadAndUploadFalImage(base44, falImageUrl);
   if (!url) throw new Error('Failed to upload generated image');
   return url;
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
 
-Deno.serve(async (req) => {
+export default async function(req) {
   console.log('transformPhoto invoked');
 
-  if (!GEMINI_API_KEY) {
+  if (!FAL_API_KEY) {
     return Response.json({
-      error: 'AI service is not configured. Please set GEMINI_API_KEY in your app secrets.',
+      error: 'AI service is not configured. Please set FAL_API_KEY in your app secrets.',
       error_code: 'MISSING_API_KEY',
     }, { status: 500 });
   }
@@ -233,13 +218,13 @@ Deno.serve(async (req) => {
     extra_photo_count: extra_photo_urls.length,
     transformation_id,
     promptPreview: prompt?.slice(0, 120),
-    provider: 'gemini',
+    provider: 'fal',
   });
 
   try {
     const base44 = createClientFromRequest(req);
 
-    const user = await base44.auth.me();
+    const user = await base44.auth.me().catch((e) => (e.status === 401 ? null : Promise.reject(e)));
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     if (!original_photo_url) {
@@ -281,11 +266,12 @@ Deno.serve(async (req) => {
 
     let url;
     try {
-      url = await generateMultiPerson(base44, allUrls, prompt);
+      url = await generateImage(base44, allUrls, prompt);
     } catch (genError) {
       await refundCredits(base44, user.email, creditCheck.deducted);
 
-      if (genError.message === 'SAFETY_VIOLATION' || genError.message.toLowerCase().includes('safety')) {
+      const msg = genError.message.toLowerCase();
+      if (msg.includes('safety') || msg.includes('nsfw') || msg.includes('blocked')) {
         return Response.json({
           error: 'The image was blocked by safety filters. Please try a different photo or era.',
           error_code: 'SAFETY_VIOLATION',
@@ -303,13 +289,13 @@ Deno.serve(async (req) => {
 
     let userMessage = error.message;
     if (error.message.includes('401') || error.message.includes('403')) {
-      userMessage = 'AI service authentication failed. Please check your GEMINI_API_KEY.';
-    } else if (error.message.includes('429') || error.message.includes('quota')) {
-      userMessage = 'Gemini API quota exceeded. Please enable billing on your Google AI account at https://aistudio.google.com.';
+      userMessage = 'AI service authentication failed. Please check your FAL_API_KEY.';
+    } else if (error.message.includes('429') || error.message.toLowerCase().includes('quota')) {
+      userMessage = 'AI service rate limit reached. Please try again in a moment.';
     } else if (error.message.includes('timed out')) {
       userMessage = 'Image generation took too long. Please try again.';
     }
 
     return Response.json({ error: userMessage, raw_error: error.message }, { status: 500 });
   }
-});
+}
