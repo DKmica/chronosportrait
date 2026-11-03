@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.25';
-import Jimp from 'npm:jimp@1.6.1';
+import { Jimp } from 'npm:jimp@1.6.1/dist/esm/index.js';
 
 const FAL_API_KEY = Deno.env.get('FAL_API_KEY');
 const FAL_SYNC_BASE = 'https://fal.run';
